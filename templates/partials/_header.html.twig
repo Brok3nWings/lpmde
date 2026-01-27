@@ -29,9 +29,25 @@
                 <span
                     class="absolute top-1 right-1 bg-primary text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">3</span>
             </button>
-            <button class="p-2 hover:bg-white/5 rounded-full">
-                <span class="text-white material-symbols-outlined">account_circle</span>
-            </button>
+            {% if app.user %}
+                <div class="flex items-center gap-2 border-r border-white/10 pr-4 mr-2">
+                    <span class="material-symbols-outlined text-white">person</span>
+                    
+                    <span class="hidden xl:block text-[10px] tracking-wider text-slate-400 font-bold">
+                        {{ app.user.userIdentifier }}
+                    </span>
+                </div>
+
+                <a href="{{ path('app_logout') }}" 
+                title="Se déconnecter"
+                class="group flex items-center justify-center w-8 h-8 rounded-full bg-white/5 hover:bg-primary transition-all duration-300">
+                    <span class="material-symbols-outlined text-sm text-slate-300 group-hover:text-white">logout</span>
+                </a>
+            {% else %}
+                <a href="{{ path('app_login') }}" class="hover:text-primary transition-colors" title="Se connecter">
+                    <span class="material-symbols-outlined">login</span>
+                </a>
+            {% endif %}
         </div>
     </div>
 </header>
