@@ -44,6 +44,16 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
     && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf \
     && a2enmod rewrite
 
+# Passer les variables d'environnement Docker a PHP via Apache mod_php
+RUN { \
+    echo 'SetEnv APP_ENV prod'; \
+    echo 'SetEnv APP_DEBUG 0'; \
+    echo 'PassEnv APP_SECRET'; \
+    echo 'PassEnv DATABASE_URL'; \
+    echo 'PassEnv MESSENGER_TRANSPORT_DSN'; \
+    } > /etc/apache2/conf-available/docker-env.conf \
+    && a2enconf docker-env
+
 # Configuration PHP pour la production
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
     && echo "opcache.enable=1" >> "$PHP_INI_DIR/conf.d/opcache.ini" \
