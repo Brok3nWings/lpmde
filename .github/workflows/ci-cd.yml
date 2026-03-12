@@ -327,6 +327,9 @@ jobs:
       name: staging
       url: http://localhost:8089
     steps:
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
       - name: Pull latest image
         run: docker pull ghcr.io/${{ github.repository }}:latest
 
@@ -362,6 +365,9 @@ jobs:
       name: production
       url: http://localhost:8088
     steps:
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
       - name: Pull latest image
         run: docker pull ghcr.io/${{ github.repository }}:latest
 
