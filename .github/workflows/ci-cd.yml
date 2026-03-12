@@ -6,11 +6,13 @@ on:
       - main
       - master
       - develop
+      - bryan
   pull_request:
     branches:
       - main
       - master
       - develop
+      - bryan
 
 env:
   DOCKER_DRIVER: overlay2
