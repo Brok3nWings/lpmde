@@ -1,0 +1,4 @@
+security:
+    # Accès libre en développement pour faciliter les tests manuels et la démo.
+    # En production (prod/security.yaml), ROLE_USER est requis sur /api/.
+    access_control: []

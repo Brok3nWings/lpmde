@@ -38,15 +38,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-composer-
 
-<<<<<<< HEAD
       - name: Create .env file for CI
         run: |
           echo "APP_ENV=test" > .env
           echo "APP_SECRET=test_secret_for_ci_only" >> .env
           echo "DATABASE_URL=postgresql://test:test@localhost:5432/test?serverVersion=16" >> .env
 
-=======
->>>>>>> 2a2a3044f9adead3da88b05626bcae0a87f58ad4
       - name: Install dependencies
         run: composer install --prefer-dist --no-ansi --no-interaction --no-progress --optimize-autoloader
 
@@ -123,15 +120,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-<<<<<<< HEAD
       - name: Create .env file for tests
         run: |
           echo "APP_ENV=test" > .env
           echo "APP_SECRET=test_secret_for_ci_only" >> .env
           echo "DATABASE_URL=postgresql://test:test@localhost:5432/test?serverVersion=16" >> .env
 
-=======
->>>>>>> 2a2a3044f9adead3da88b05626bcae0a87f58ad4
       - name: Download vendor artifact
         uses: actions/download-artifact@v4
         with:
@@ -148,8 +142,11 @@ jobs:
       - name: Create log directory
         run: mkdir -p var/log
 
-      - name: Run unit tests
-        run: php bin/phpunit --coverage-cobertura=var/log/cobertura.xml --log-junit=var/log/junit.xml
+      - name: Run unit tests with coverage
+        run: php bin/phpunit --coverage-cobertura=var/log/cobertura.xml --log-junit=var/log/junit.xml --coverage-text | tee var/log/coverage-summary.txt
+
+      - name: Print coverage summary
+        run: grep -E "Classes|Methods|Lines" var/log/coverage-summary.txt || true
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -168,15 +165,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-<<<<<<< HEAD
       - name: Create .env file for tests
         run: |
           echo "APP_ENV=test" > .env
           echo "APP_SECRET=test_secret_for_ci_only" >> .env
           echo "DATABASE_URL=postgresql://test:test@localhost:5432/test?serverVersion=16" >> .env
 
-=======
->>>>>>> 2a2a3044f9adead3da88b05626bcae0a87f58ad4
       - name: Download vendor artifact
         uses: actions/download-artifact@v4
         with:
@@ -196,9 +190,69 @@ jobs:
         continue-on-error: false
 
   # Stage Release
-  build-image:
+  k6-smoke-test:
     runs-on: ubuntu-latest
     needs: [unit-test, e2e-test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env file
+        run: |
+          echo "APP_ENV=dev" > .env
+          echo "APP_SECRET=test_secret_for_ci_only" >> .env
+          echo "DATABASE_URL=sqlite:///%kernel.project_dir%/var/test.db" >> .env
+          echo "USER_SERVICE_URL=http://localhost:8001" >> .env
+          echo "SUBSCRIPTION_SERVICE_URL=http://localhost:8001" >> .env
+          echo "MESSENGER_TRANSPORT_DSN=sync://" >> .env
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo, pdo_sqlite
+
+      - name: Download vendor artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: vendor
+          path: vendor/
+
+      - name: Install k6
+        run: |
+          sudo gpg --no-default-keyring \
+            --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 \
+            --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
+            | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update -qq
+          sudo apt-get install -y k6
+
+      - name: Start PHP servers
+        run: |
+          php -S localhost:8000 -t public &
+          php -S localhost:8001 -t public &
+          sleep 3
+          curl -sf http://localhost:8000/ > /dev/null && echo "Server 8000 OK"
+          curl -sf http://localhost:8001/ > /dev/null && echo "Server 8001 OK"
+
+      - name: Run k6 smoke test
+        run: k6 run load-tests/smoke-test.js --out json=var/log/k6-results.json
+        continue-on-error: true
+
+      - name: Upload k6 results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-results
+          path: var/log/k6-results.json
+        continue-on-error: true
+
+  # Stage Release
+  build-image:
+    runs-on: ubuntu-latest
+    needs: [unit-test, e2e-test, k6-smoke-test]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'
     permissions:
       contents: read
@@ -237,21 +291,49 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  # Scan de vulnérabilités sur l'image Docker construite
+  trivy-image-scan:
+    runs-on: ubuntu-latest
+    needs: build-image
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Trivy vulnerability scanner on Docker image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:latest
+          scan-type: 'image'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '0'
+          format: 'sarif'
+          output: 'trivy-image-results.sarif'
+        continue-on-error: true
+
+      - name: Upload Trivy image scan results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-image-results.sarif'
+        continue-on-error: true
+
   # Stage Staging
   deploy-staging:
     runs-on: ubuntu-latest
-    needs: build-image
-<<<<<<< HEAD
+    needs: trivy-image-scan
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:
       name: staging
       url: https://localhost
-=======
-    if: github.ref == 'refs/heads/develop'
-    environment:
-      name: staging
-      url: https://staging.example.com
->>>>>>> 2a2a3044f9adead3da88b05626bcae0a87f58ad4
     steps:
       - name: Deploy to staging
         uses: appleboy/ssh-action@v1.0.0
@@ -269,7 +351,6 @@ jobs:
   deploy-production:
     runs-on: ubuntu-latest
     needs: build-image
-<<<<<<< HEAD
     if: false  # Désactivé pour cluster local - déployer manuellement
     environment:
       name: production
@@ -319,21 +400,3 @@ jobs:
       - name: Show deployment status
         run: |
           kubectl get all -n lpmde-production
-=======
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    environment:
-      name: production
-      url: https://production.example.com
-    steps:
-      - name: Deploy to production
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.PRODUCTION_SERVER }}
-          username: ${{ secrets.PRODUCTION_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ${{ secrets.PRODUCTION_PATH }}
-            docker pull ghcr.io/${{ github.repository }}:latest
-            docker-compose down
-            docker-compose up -d
->>>>>>> 2a2a3044f9adead3da88b05626bcae0a87f58ad4

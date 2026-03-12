@@ -3,18 +3,35 @@
 namespace App\MessageHandler;
 
 use App\Message\GhostAlert;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]
 class GhostAlertHandler
 {
-    public function __invoke(GhostAlert $alert)
-    {
-        // C'est ici qu'on fait le traitement lourd !
-        // Pour la démo, on simule une attente de 5 secondes
-        sleep(5); 
+    public function __construct(private LoggerInterface $logger) {}
 
-        // On affiche juste un message (visible dans les logs du worker)
-        echo "👻 ALERTE TRAITÉE : Un " . $alert->getMonsterType() . " a été vu dans : " . $alert->getLocation() . "\n";
+    public function __invoke(GhostAlert $alert): void
+    {
+        $this->logger->info('GhostAlert reçue', [
+            'monster'  => $alert->getMonsterType(),
+            'location' => $alert->getLocation(),
+        ]);
+
+        // Simulation du traitement lourd
+        sleep(5);
+
+        $msg = sprintf(
+            '👻 ALERTE TRAITÉE : Un %s a été vu dans : %s',
+            $alert->getMonsterType(),
+            $alert->getLocation()
+        );
+
+        $this->logger->info('GhostAlert traitée', [
+            'monster'  => $alert->getMonsterType(),
+            'location' => $alert->getLocation(),
+        ]);
+
+        echo $msg . "\n";
     }
 }

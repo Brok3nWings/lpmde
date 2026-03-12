@@ -24,3 +24,10 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    App\Service\UserServiceClient:
+        arguments:
+            $userServiceUrl: '%env(USER_SERVICE_URL)%'
+
+    App\Service\SubscriptionServiceClient:
+        arguments:
+            $subscriptionServiceUrl: '%env(SUBSCRIPTION_SERVICE_URL)%'

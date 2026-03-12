@@ -3,26 +3,34 @@
 namespace App\MessageHandler;
 
 use App\Message\UserLoginNotification;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]
 class UserLoginNotificationHandler
 {
-    public function __invoke(UserLoginNotification $notification)
+    public function __construct(private LoggerInterface $logger) {}
+
+    public function __invoke(UserLoginNotification $notification): void
     {
-        // Traitement du message de connexion
-        // On simule un traitement (par exemple : log, email, etc.)
+        $this->logger->info('UserLoginNotification reçue', [
+            'username'   => $notification->getUsername(),
+            'login_time' => $notification->getLoginTime()->format('H:i:s'),
+        ]);
+
+        // Simulation du traitement (email, BDD, etc.)
         sleep(2);
 
-        echo sprintf(
-            "✅ NOTIFICATION TRAITÉE : L'utilisateur '%s' s'est connecté à %s\n",
+        $msg = sprintf(
+            "✅ NOTIFICATION TRAITÉE : L'utilisateur '%s' s'est connecté à %s",
             $notification->getUsername(),
             $notification->getLoginTime()->format('H:i:s')
         );
 
-        // Ici vous pourriez :
-        // - Enregistrer dans une base de données
-        // - Envoyer un email
-        // - Notifier d'autres services
+        $this->logger->info('UserLoginNotification traitée', [
+            'username' => $notification->getUsername(),
+        ]);
+
+        echo $msg . "\n";
     }
 }
