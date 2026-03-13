@@ -349,9 +349,14 @@ jobs:
               Write-Host "Staging OK - HTTP $($response.StatusCode)"
               exit 0
             } catch {
-              Write-Host "Tentative $attempt/$maxAttempts..."
+              $statusCode = if ($_.Exception.Response) { $_.Exception.Response.StatusCode.value__ } else { "connexion refusee" }
+              Write-Host "Tentative $attempt/$maxAttempts - $statusCode - $($_.Exception.Message)"
             }
           } while ($attempt -lt $maxAttempts)
+          Write-Host "=== Logs du conteneur staging (50 dernieres lignes) ==="
+          docker logs --tail 50 lpmde_staging
+          Write-Host "=== Etat du conteneur ==="
+          docker inspect --format "Statut: {{.State.Status}} | Erreur: {{.State.Error}}" lpmde_staging
           Write-Host "Health check echoue apres $maxAttempts tentatives"
           exit 1
 
@@ -426,8 +431,13 @@ jobs:
               Write-Host "Production OK - HTTP $($response.StatusCode)"
               exit 0
             } catch {
-              Write-Host "Tentative $attempt/$maxAttempts..."
+              $statusCode = if ($_.Exception.Response) { $_.Exception.Response.StatusCode.value__ } else { "connexion refusee" }
+              Write-Host "Tentative $attempt/$maxAttempts - $statusCode - $($_.Exception.Message)"
             }
           } while ($attempt -lt $maxAttempts)
+          Write-Host "=== Logs du conteneur production (50 dernieres lignes) ==="
+          docker logs --tail 50 lpmde_prod
+          Write-Host "=== Etat du conteneur ==="
+          docker inspect --format "Statut: {{.State.Status}} | Erreur: {{.State.Error}}" lpmde_prod
           Write-Host "Health check echoue apres $maxAttempts tentatives"
           exit 1
