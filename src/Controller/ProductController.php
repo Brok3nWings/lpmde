@@ -10,7 +10,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class ProductController extends AbstractController
 {
-    #[Route('/api/products', name: 'product_list')]
+    #[Route('/api/products', name: 'product_list', methods: ['GET'])]
     public function index(ProductRepository $productRepository)
     {
         $products = $productRepository->findAll();
