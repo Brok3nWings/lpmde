@@ -337,6 +337,14 @@ jobs:
           Write-Host "Seed termine"
         continue-on-error: true
 
+      - name: Fix cache permissions and warm up
+        run: |
+          docker exec lpmde_staging chown -R www-data:www-data /var/www/html/var
+          docker exec -u www-data `
+            -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
+            lpmde_staging `
+            php bin/console cache:warmup --env=prod
+
       - name: Health check staging
         run: |
           $maxAttempts = 12
@@ -418,6 +426,14 @@ jobs:
             -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
             lpmde_prod `
             bash -c "cd /var/www/html && php bin/console doctrine:migrations:migrate --no-interaction"
+
+      - name: Fix cache permissions and warm up
+        run: |
+          docker exec lpmde_prod chown -R www-data:www-data /var/www/html/var
+          docker exec -u www-data `
+            -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
+            lpmde_prod `
+            php bin/console cache:warmup --env=prod
 
       - name: Health check
         run: |
