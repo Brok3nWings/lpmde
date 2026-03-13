@@ -333,7 +333,7 @@ jobs:
           docker exec `
             -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
             lpmde_staging `
-            bash -c "cd /var/www/html && php bin/console app:db:seed --no-interaction 2>/dev/null || php bin/console doctrine:query:sql \"INSERT INTO product (name, description, price) SELECT 'Potion de l Epouvante','Breuvage mystérieux qui donne des frissons garantis',12.99 WHERE NOT EXISTS (SELECT 1 FROM product LIMIT 1)\"" 2>&1 | Out-Null
+            php bin/console app:db:seed --no-interaction
           Write-Host "Seed termine"
         continue-on-error: true
 
