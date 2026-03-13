@@ -298,7 +298,7 @@ jobs:
             Start-Sleep -Seconds 10
           } else {
             Write-Host "PostgreSQL deja en cours d'execution"
-            $nets = docker inspect --format "{{range `$k, `$v := .NetworkSettings.Networks}}{{`$k}} {{end}}" lpmde_db_prod 2>&1
+            $nets = docker inspect --format "{{json .NetworkSettings.Networks}}" lpmde_db_prod 2>&1
             if ($nets -notmatch "lpmde-net") { docker network connect lpmde-net lpmde_db_prod }
           }
 
@@ -384,7 +384,7 @@ jobs:
             Start-Sleep -Seconds 10
           } else {
             Write-Host "PostgreSQL deja en cours d'execution"
-            $nets = docker inspect --format "{{range `$k, `$v := .NetworkSettings.Networks}}{{`$k}} {{end}}" lpmde_db_prod 2>&1
+            $nets = docker inspect --format "{{json .NetworkSettings.Networks}}" lpmde_db_prod 2>&1
             if ($nets -notmatch "lpmde-net") { docker network connect lpmde-net lpmde_db_prod }
           }
 
