@@ -278,7 +278,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Ensure lpmde-net network exists
-        run: docker network create lpmde-net 2>&1 | Out-Null; Write-Host "Network ready"
+        run: docker network inspect lpmde-net 2>&1 | Out-Null; if ($LASTEXITCODE -ne 0) { docker network create lpmde-net }; Write-Host "Network ready"
 
       - name: Ensure PostgreSQL container is running
         run: |
@@ -363,7 +363,7 @@ jobs:
       url: http://localhost:8088
     steps:
       - name: Ensure lpmde-net network exists
-        run: docker network create lpmde-net 2>&1 | Out-Null; Write-Host "Network ready"
+        run: docker network inspect lpmde-net 2>&1 | Out-Null; if ($LASTEXITCODE -ne 0) { docker network create lpmde-net }; Write-Host "Network ready"
 
       - name: Ensure PostgreSQL container is running
         run: |
