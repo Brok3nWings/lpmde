@@ -298,7 +298,8 @@ jobs:
             Start-Sleep -Seconds 10
           } else {
             Write-Host "PostgreSQL deja en cours d'execution"
-            docker network connect lpmde-net lpmde_db_prod 2>&1 | Out-Null; $global:LASTEXITCODE = 0
+            $nets = docker inspect --format "{{range `$k, `$v := .NetworkSettings.Networks}}{{`$k}} {{end}}" lpmde_db_prod 2>&1
+            if ($nets -notmatch "lpmde-net") { docker network connect lpmde-net lpmde_db_prod }
           }
 
       - name: Stop and remove existing staging container
@@ -383,7 +384,8 @@ jobs:
             Start-Sleep -Seconds 10
           } else {
             Write-Host "PostgreSQL deja en cours d'execution"
-            docker network connect lpmde-net lpmde_db_prod 2>&1 | Out-Null; $global:LASTEXITCODE = 0
+            $nets = docker inspect --format "{{range `$k, `$v := .NetworkSettings.Networks}}{{`$k}} {{end}}" lpmde_db_prod 2>&1
+            if ($nets -notmatch "lpmde-net") { docker network connect lpmde-net lpmde_db_prod }
           }
 
       - name: Stop and remove existing container
