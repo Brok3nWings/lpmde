@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Gateway\ApiAggregator;
+use App\Repository\ProductRepository;
+use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
@@ -22,25 +24,32 @@ class ApiGatewayController extends AbstractController
     }
 
     #[Route('/healthy', name: 'app_healthy', methods: ['GET'])]
-    public function healthy(): JsonResponse
+    public function healthy(Connection $connection, ProductRepository $productRepository): JsonResponse
     {
+        try {
+            $connection->executeQuery('SELECT 1');
+            $dbStatus = 'ok';
+        } catch (\Throwable $e) {
+            return $this->json([
+                'status'   => 'error',
+                'database' => 'unreachable',
+                'message'  => $e->getMessage(),
+            ], 503);
+        }
+
+        $products = $productRepository->findAll();
+        $productCount = count($products);
+        $sampleProducts = array_map(
+            fn($p) => ['id' => $p->getId(), 'name' => $p->getName(), 'price' => $p->getPrice()],
+            array_slice($products, 0, 5)
+        );
+
         return $this->json([
-            'status' => 'ok',
-            'route'  => 'app_apigateway_profile',
-            'path'   => '/api/profile/{id}',
-            'method' => 'GET',
-            'expected_response' => [
-                'user' => [
-                    'id'    => 1,
-                    'name'  => 'Bryan Joubert',
-                    'email' => 'bryan.joubert@gmail.com',
-                ],
-                'subscription' => [
-                    'userId' => 1,
-                    'plan'   => 'Premium',
-                    'status' => 'active',
-                ],
-                'errors' => [],
+            'status'   => 'ok',
+            'database' => $dbStatus,
+            'products' => [
+                'total'   => $productCount,
+                'sample'  => $sampleProducts,
             ],
         ]);
     }

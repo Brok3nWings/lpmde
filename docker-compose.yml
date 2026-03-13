@@ -9,30 +9,35 @@ services:
       - "${APP_PORT:-8080}:80"
     environment:
       APP_ENV: ${APP_ENV:-prod}
-      APP_SECRET: ${APP_SECRET}
-      DATABASE_URL: ${DATABASE_URL}
+      APP_SECRET: ${APP_SECRET:-changeme_in_production_with_random_string}
+      DATABASE_URL: postgresql://${DB_USER:-lpmde}:${DB_PASSWORD:-lpmde}@database:5432/${DB_NAME:-lpmde}?serverVersion=16&charset=utf8
     volumes:
       - ./var/log:/var/www/html/var/log
     networks:
       - lpmde-network
     depends_on:
-      - db
+      database:
+        condition: service_healthy
 
-  db:
-    image: mysql:8.0
+  database:
+    image: postgres:16-alpine
     container_name: lpmde-db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-lpmde}
-      MYSQL_USER: ${MYSQL_USER:-lpmde}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-lpmde}
+      POSTGRES_DB: ${DB_NAME:-lpmde}
+      POSTGRES_USER: ${DB_USER:-lpmde}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-lpmde}
     volumes:
-      - db-data:/var/lib/mysql
+      - db-data:/var/lib/postgresql/data
     networks:
       - lpmde-network
     ports:
-      - "${DB_PORT:-3306}:3306"
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-lpmde} -d ${DB_NAME:-lpmde}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 networks:
   lpmde-network:
