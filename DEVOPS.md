@@ -23,6 +23,16 @@ Ce document présente les outils DevOps utilisés dans le projet ainsi qu'une de
 | **GitHub Actions** | Moteur CI/CD hébergé sur GitHub. Orchestre l'ensemble du pipeline (tests, sécurité, build, déploiement). |
 | **Self-hosted runner** | Agent GitHub Actions installé en local sur la machine de déploiement. Utilisé pour les jobs qui nécessitent un accès à Docker ou aux environnements de déploiement locaux (staging, production). |
 
+> **Pourquoi un self-hosted runner ?**
+>
+> Les runners hébergés par GitHub (`ubuntu-latest`) sont des machines éphémères sans accès au réseau local ni à un Docker daemon persistant. Les jobs de build d'image, de scan Trivy sur l'image et de déploiement ont besoin :
+> - d'**accéder au daemon Docker local** pour construire et exécuter des conteneurs (`docker build`, `docker run`, `docker stop`…) ;
+> - de **persister l'image Docker** entre les jobs `build-image`, `trivy-image-scan` et `deploy-*` sans la pousser sur un registry distant ;
+> - de **déployer directement** sur la machine locale qui fait office de serveur de staging (`localhost:8089`) et de production (`localhost:8088`) ;
+> - de **conserver les secrets** d'environnement (`APP_SECRET`) sur une infrastructure maîtrisée plutôt que de les exposer à une machine cloud tierce.
+>
+> Le runner self-hosted est configuré via `runs-on: self-hosted` dans les jobs `build-image`, `trivy-image-scan`, `deploy-staging` et `deploy-production`.
+
 ### Conteneurisation
 
 | Outil | Rôle |
