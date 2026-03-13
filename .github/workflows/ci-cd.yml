@@ -274,6 +274,33 @@ jobs:
       name: staging
       url: http://localhost:8089
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Ensure lpmde-net network exists
+        run: docker network create lpmde-net 2>&1 | Out-Null; Write-Host "Network ready"
+
+      - name: Ensure PostgreSQL container is running
+        run: |
+          $running = docker inspect --format "{{.State.Running}}" lpmde_db_prod 2>&1
+          if ($running -ne "true") {
+            Write-Host "Demarrage du conteneur PostgreSQL..."
+            docker rm lpmde_db_prod 2>&1 | Out-Null
+            docker run -d `
+              --restart=unless-stopped `
+              --network lpmde-net `
+              --name lpmde_db_prod `
+              -e POSTGRES_DB=app_db `
+              -e POSTGRES_USER=app_user `
+              -e POSTGRES_PASSWORD=app_password `
+              -v lpmde_pg_data:/var/lib/postgresql/data `
+              postgres:16-alpine
+            Start-Sleep -Seconds 10
+          } else {
+            Write-Host "PostgreSQL deja en cours d'execution"
+            docker network connect lpmde-net lpmde_db_prod 2>&1 | Out-Null
+          }
+
       - name: Stop and remove existing staging container
         run: |
           docker stop lpmde_staging
@@ -284,12 +311,30 @@ jobs:
         run: |
           docker run -d `
             --restart=unless-stopped `
+            --network lpmde-net `
             -p 8089:80 `
             -e APP_ENV=prod `
             -e APP_SECRET=${{ secrets.APP_SECRET }} `
-            -e DATABASE_URL="sqlite:////var/www/html/var/app.db" `
+            -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
             --name lpmde_staging `
             lpmde:latest
+
+      - name: Run database migrations
+        run: |
+          Start-Sleep -Seconds 5
+          docker exec `
+            -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
+            lpmde_staging `
+            bash -c "cd /var/www/html && php bin/console doctrine:migrations:migrate --no-interaction"
+
+      - name: Seed database with initial data
+        run: |
+          docker exec `
+            -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
+            lpmde_staging `
+            bash -c "cd /var/www/html && php bin/console app:db:seed --no-interaction 2>/dev/null || php bin/console doctrine:query:sql \"INSERT INTO product (name, description, price) SELECT 'Potion de l Epouvante','Breuvage mystérieux qui donne des frissons garantis',12.99 WHERE NOT EXISTS (SELECT 1 FROM product LIMIT 1)\"" 2>&1 | Out-Null
+          Write-Host "Seed termine"
+        continue-on-error: true
 
       - name: Health check staging
         run: |
@@ -299,7 +344,7 @@ jobs:
             $attempt++
             Start-Sleep -Seconds 5
             try {
-              $response = Invoke-WebRequest -Uri http://localhost:8089 -UseBasicParsing -ErrorAction Stop
+              $response = Invoke-WebRequest -Uri http://localhost:8089/healthy -UseBasicParsing -ErrorAction Stop
               Write-Host "Staging OK - HTTP $($response.StatusCode)"
               exit 0
             } catch {
@@ -317,6 +362,30 @@ jobs:
       name: production
       url: http://localhost:8088
     steps:
+      - name: Ensure lpmde-net network exists
+        run: docker network create lpmde-net 2>&1 | Out-Null; Write-Host "Network ready"
+
+      - name: Ensure PostgreSQL container is running
+        run: |
+          $running = docker inspect --format "{{.State.Running}}" lpmde_db_prod 2>&1
+          if ($running -ne "true") {
+            Write-Host "Demarrage du conteneur PostgreSQL..."
+            docker rm lpmde_db_prod 2>&1 | Out-Null
+            docker run -d `
+              --restart=unless-stopped `
+              --network lpmde-net `
+              --name lpmde_db_prod `
+              -e POSTGRES_DB=app_db `
+              -e POSTGRES_USER=app_user `
+              -e POSTGRES_PASSWORD=app_password `
+              -v lpmde_pg_data:/var/lib/postgresql/data `
+              postgres:16-alpine
+            Start-Sleep -Seconds 10
+          } else {
+            Write-Host "PostgreSQL deja en cours d'execution"
+            docker network connect lpmde-net lpmde_db_prod 2>&1 | Out-Null
+          }
+
       - name: Stop and remove existing container
         run: |
           docker stop lpmde_prod
@@ -327,12 +396,21 @@ jobs:
         run: |
           docker run -d `
             --restart=unless-stopped `
+            --network lpmde-net `
             -p 8088:80 `
             -e APP_ENV=prod `
             -e APP_SECRET=${{ secrets.APP_SECRET }} `
-            -e DATABASE_URL="sqlite:////var/www/html/var/app.db" `
+            -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
             --name lpmde_prod `
             lpmde:latest
+
+      - name: Run database migrations
+        run: |
+          Start-Sleep -Seconds 5
+          docker exec `
+            -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
+            lpmde_prod `
+            bash -c "cd /var/www/html && php bin/console doctrine:migrations:migrate --no-interaction"
 
       - name: Health check
         run: |
@@ -342,7 +420,7 @@ jobs:
             $attempt++
             Start-Sleep -Seconds 5
             try {
-              $response = Invoke-WebRequest -Uri http://localhost:8088 -UseBasicParsing -ErrorAction Stop
+              $response = Invoke-WebRequest -Uri http://localhost:8088/healthy -UseBasicParsing -ErrorAction Stop
               Write-Host "Production OK - HTTP $($response.StatusCode)"
               exit 0
             } catch {
