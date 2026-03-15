@@ -16,7 +16,7 @@ const C = {
   green:    "27AE60",
   orange:   "E67E22",
 };
-const FONT_TITLE  = "Georgia";
+const FONT_TITLE  = "Palatino Linotype";
 const FONT_BODY   = "Calibri";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -112,7 +112,16 @@ function card(s, x, y, w, h, color = C.card) {
     x: 0.8, y: 6.7, w: 12.3, h: 0.45,
     fontSize: 14, bold: true, color: C.white, fontFace: FONT_BODY, align: "right",
   });
-  s.addNotes("Bonjour à tous. Je vais vous présenter le travail réalisé dans le cadre du module Superviser et assurer le développement logiciel. On va parcourir ensemble comment j'ai structuré ce projet de A à Z, du processus qualité jusqu'au déploiement automatique en production.");
+  s.addNotes(`Bonjour à tous. Je m'appelle Bryan JOUBERT, je vais vous présenter le travail réalisé dans le cadre du module Superviser et assurer le développement des applications logicielles.
+
+Sur ce projet, j'ai endossé le rôle de Lead Developer pour La Petite Maison de l'Épouvante — une entreprise spécialisée dans l'univers horrifique.
+
+La présentation couvre trois grandes dimensions :
+- Comment j'ai structuré le processus qualité, du choix des indicateurs à la mise en place du pipeline CI/CD
+- Comment le POC fonctionnel a été conçu et déployé, de l'architecture aux résultats mesurés
+- Comment j'ai audité la sécurité et proposé un plan de remédiation concret
+
+On parcourt tout ça ensemble, n'hésitez pas à m'interrompre si quelque chose mérite d'être précisé.`);
 }
 
 // ─── SLIDE 2 — Sommaire ─────────────────────────────────────────────────────
@@ -187,16 +196,40 @@ PARTIE 3 — Sécurité & Remédiation :
   mainTitle(s, "La mission");
 
   const items = [
-    { icon: "🏚", text: "Entreprise de 10 ans — SI fragmenté, pas\nde vente en ligne, CMS basique" },
-    { icon: "🎯", text: "Mission : développer la v1 de la future\nplateforme numérique" },
-    { icon: "👨‍💻", text: "Rôle Lead Developer : processus qualité,\nPOC fonctionnel, analyse sécurité" },
+    {
+      num: "01",
+      title: "L'entreprise",
+      desc: "10 ans dans le secteur horrifique\nSI fragmenté — CMS basique\nAucune vente en ligne",
+      color: "2E1A1A",
+    },
+    {
+      num: "02",
+      title: "La mission",
+      desc: "Développer la v1 de la future\nplateforme numérique\nBase technique solide et évolutive",
+      color: "1A1A2E",
+    },
+    {
+      num: "03",
+      title: "Mon rôle — Lead Developer",
+      desc: "Processus qualité & ISO 25010\nPOC fonctionnel & architecture\nAnalyse sécurité & remédiation",
+      color: "1A2E1A",
+    },
   ];
-  items.forEach(({ icon, text }, i) => {
-    const y = 3.6 + i * 1.1;
-    card(s, 0.4, y, 12.5, 0.9);
-    s.addText(icon + "  " + text, { x: 0.7, y: y + 0.1, w: 11.8, h: 0.7, fontSize: 14, color: C.white, fontFace: FONT_BODY });
+  items.forEach(({ num, title, desc, color }, i) => {
+    const x = 0.4 + i * 4.3;
+    card(s, x, 3.0, 4.0, 4.0, color);
+    s.addText(num, { x: x + 0.15, y: 3.1, w: 0.8, h: 0.65, fontSize: 28, bold: true, color: C.accent2, fontFace: FONT_TITLE });
+    s.addText(title, { x: x + 0.15, y: 3.75, w: 3.7, h: 0.55, fontSize: 13, bold: true, color: C.white, fontFace: FONT_BODY });
+    s.addShape(pptx.ShapeType.rect, { x: x + 0.15, y: 4.35, w: 3.5, h: 0.04, fill: { color: C.accent } });
+    s.addText(desc, { x: x + 0.2, y: 4.45, w: 3.6, h: 2.2, fontSize: 12, color: C.grey, fontFace: FONT_BODY });
   });
-  s.addNotes("La Petite Maison de l'Epouvante est une société spécialisée dans le genre horrifique avec 10 ans d'existence. Le problème : leur SI est fragmenté et ils n'ont pas de vente en ligne. Ma mission en tant que Lead Dev : poser les bases d'une vraie plateforme numérique moderne.");
+  s.addNotes(`Cette diapositive pose le contexte de la mission.
+
+🏚 L'entreprise : La Petite Maison de l'Épouvante a 10 ans d'existence dans le secteur horrifique. Leur système d'information est fragmenté — un CMS basique, pas de vente en ligne, pas de plateforme digitale cohérente. Le potentiel est là, mais les outils ne suivent pas.
+
+🎯 La mission : développer la v1 de leur future plateforme numérique. L'objectif n'est pas de tout livrer d'un coup, c'est de poser une base technique solide, testée et sécurisée, sur laquelle la v2 pourra s'appuyer.
+
+👨‍💻 Mon rôle de Lead Developer : je suis responsable de trois choses — définir le processus qualité pour que le code soit fiable, livrer un POC fonctionnel qui valide les choix techniques, et réaliser une analyse de sécurité complète avec un plan d'action. Ce n'est pas uniquement développer — c'est structurer la démarche de bout en bout.`);
 }
 
 // ─── SLIDE 3 — Séparateur Partie 1 ──────────────────────────────────────────
@@ -217,7 +250,13 @@ PARTIE 3 — Sécurité & Remédiation :
     x: 0, y: 4.4, w: "100%", h: 0.5,
     fontSize: 14, color: C.grey, fontFace: FONT_BODY, align: "center", italic: true,
   });
-  s.addNotes("Commençons par le processus qualité. Comment garantit-on qu'on livre un produit fiable ? C'est la question centrale de cette première partie.");
+  s.addNotes(`Commençons par le processus qualité. La question fondamentale de cette partie : comment garantit-on qu'on livre un produit fiable, et pas juste "ça marche sur ma machine" ?
+
+On va voir 4 choses concrètes :
+- Les indicateurs ISO 25010 qui permettent de mesurer objectivement la qualité
+- L'approche DevSecOps qui intègre la sécurité à chaque étape
+- Le pipeline de 11 jobs qui automatise tout ça
+- La cartographie de l'équipe nécessaire pour faire tourner ce type de projet`);
 }
 
 // ─── SLIDE 4 — 4 Indicateurs ISO 25010 ──────────────────────────────────────
@@ -244,7 +283,15 @@ PARTIE 3 — Sécurité & Remédiation :
     s.addText(iso, { x: x + 0.1, y: 5.25, w: 2.8, h: 0.4, fontSize: 10, color: C.gold, fontFace: FONT_BODY, align: "center" });
     s.addText(tool, { x: x + 0.1, y: 5.7, w: 2.8, h: 0.4, fontSize: 11, color: C.grey, fontFace: FONT_BODY, align: "center", italic: true });
   });
-  s.addNotes("J'ai sélectionné 4 indicateurs directement issus de la norme ISO 25010. Ce ne sont pas des métriques arbitraires — chacune est mesurée automatiquement dans le pipeline CI/CD. Si la couverture passe sous le seuil, le build échoue directement.");
+  s.addNotes(`Les 4 indicateurs présentés ici sont directement issus de la norme ISO 25010, qui définit la qualité logicielle selon plusieurs dimensions. Ce ne sont pas des métriques décoratives — elles sont mesurées automatiquement à chaque build.
+
+Couverture de tests (Fiabilité) : 59,11% de lignes couvertes, mesurée par PHPUnit avec l'extension PCOV. C'est un seuil bloquant dans le pipeline — si la couverture baisse, le build échoue et le déploiement est stoppé.
+
+Vulnérabilités 0-day (Sécurité) : 0 CVE CRITICAL détectées par Trivy, qui scanne à la fois les dépendances et l'image Docker finale. Ce résultat est validé à chaque build, pas juste une fois.
+
+Temps de réponse p95 (Performance) : toutes les requêtes répondent en moins de 200ms au 95e percentile. Mesuré sous charge simulée par k6 — c'est un indicateur réaliste, pas un test à vide.
+
+Code smells / duplications (Maintenabilité) : SonarCloud analyse en continu le code poussé sur GitHub et remonte les duplications, les mauvaises pratiques et la dette technique. L'objectif est de garder un code maintenable dans le temps.`);
 }
 
 // ─── SLIDE 5 — DevSecOps Cycle de vie ────────────────────────────────────────
@@ -270,12 +317,21 @@ PARTIE 3 — Sécurité & Remédiation :
     s.addText(name, { x: x + 0.1, y: 3.15, w: 2.1, h: 0.55, fontSize: 16, bold: true, color: C.white, fontFace: FONT_TITLE, align: "center" });
     s.addShape(pptx.ShapeType.rect, { x: x + 0.4, y: 3.75, w: 1.5, h: 0.04, fill: { color: C.accent } });
     s.addText(tools, { x: x + 0.1, y: 3.85, w: 2.1, h: 1.5, fontSize: 12, color: C.grey, fontFace: FONT_BODY, align: "center" });
-    s.addText("🔒", { x: x + 0.85, y: 5.45, w: 0.6, h: 0.4, fontSize: 14, align: "center" });
     if (i < 4) {
       s.addText(arrows[i], { x: x + 2.3, y: 4.0, w: 0.4, h: 0.6, fontSize: 22, color: C.accent, fontFace: FONT_BODY, align: "center", bold: true });
     }
   });
-  s.addNotes("Le principe DevSecOps, c'est intégrer la sécurité à chaque étape plutôt qu'à la fin. Plan, Code, Build, Test, Deploy — à chaque phase, des outils automatiques vérifient que rien ne dérape. On appelle ça le Shift Left Security.");
+  s.addNotes(`Le principe du DevSecOps, c'est ce qu'on appelle le 'Shift Left Security' : intégrer les contrôles de sécurité le plus tôt possible dans le cycle de développement, plutôt que de tout auditer à la fin quand il est trop tard.
+
+Plan : dès cette phase, on formalise les besoins sous forme de Backlog et User Stories. Définir les critères d'acceptance dès le départ, c'est aussi une forme de prévention des erreurs.
+
+Code : à chaque push, un SAST — analyse statique du code source — et un npm audit vérifient qu'aucune vulnérabilité n'est introduite par le développeur.
+
+Build : Docker construit l'image et Trivy scanne immédiatement le système de fichiers pour détecter les CVE dans les dépendances installées. Si une faille est trouvée, le build s'arrête.
+
+Test : PHPUnit pour les tests unitaires et k6 pour les tests end-to-end de performance. La qualité fonctionnelle est vérifiée avant tout déploiement.
+
+Deploy : le déploiement est assuré par un runner self-hosted sur ma machine locale, qui gère les environnements staging et production de manière automatisée.`);
 }
 
 // ─── SLIDE 6 — Pipeline CI/CD ────────────────────────────────────────────────
@@ -285,43 +341,87 @@ PARTIE 3 — Sécurité & Remédiation :
   addBottomBar(s);
   compactTitleSlide(s, "CI/CD — GITHUB ACTIONS", "Pipeline 11 jobs");
 
-  // Ligne 1: install seul
-  card(s, 5.9, 1.3, 1.6, 0.55, "1A2E1A");
-  s.addText("install", { x: 5.9, y: 1.35, w: 1.6, h: 0.45, fontSize: 10, bold: true, color: C.green, fontFace: FONT_BODY, align: "center" });
+  // Layout horizontal : 6 stages de gauche à droite
+  const stageW  = 1.65;
+  const gapW    = 0.40;
+  const xStart  = 0.50;
+  const yCenter = 4.15;
+  const jobH    = 0.70;
+  const jobGap  = 0.10;
 
-  // Ligne 2: sast | trivy-fs | unit-test | e2e-test
-  const l2 = ["sast\nnpm-audit", "trivy\nfs-audit", "unit\ntest", "e2e\ntest"];
-  const l2colors = ["2E1A1A", "2E1A1A", "1A2E1A", "1A2E1A"];
-  l2.forEach((name, i) => {
-    const x = 1.0 + i * 3.0;
-    card(s, x, 2.2, 2.5, 0.65, l2colors[i]);
-    s.addText(name, { x: x, y: 2.25, w: 2.5, h: 0.55, fontSize: 9, color: i < 2 ? C.accent2 : C.green, fontFace: FONT_BODY, align: "center" });
-  });
-  s.addText("↓", { x: 6.5, y: 1.85, w: 0.5, h: 0.4, fontSize: 14, color: C.grey, align: "center" });
+  const stages = [
+    {
+      label: "① INSTALL",
+      jobs: [{ name: "install", color: "1A2E1A", textColor: C.green }],
+    },
+    {
+      label: "② SECURITY · TESTS",
+      jobs: [
+        { name: "sast\nnpm-audit",  color: "2E1A1A", textColor: C.accent2 },
+        { name: "trivy\nfs-audit",  color: "2E1A1A", textColor: C.accent2 },
+        { name: "unit\ntest",       color: "1A2E1A", textColor: C.green   },
+        { name: "e2e\ntest",        color: "1A2E1A", textColor: C.green   },
+      ],
+    },
+    {
+      label: "③ QUALITY",
+      jobs: [
+        { name: "sonar\naudit",    color: "2E1A2E", textColor: C.gold    },
+        { name: "k6\nsmoke-test", color: "1A2E2E", textColor: "#3498DB" },
+      ],
+    },
+    {
+      label: "④ BUILD",
+      jobs: [{ name: "build-image\n🖥 self-hosted", color: "2E2A1A", textColor: C.gold }],
+    },
+    {
+      label: "⑤ SCAN",
+      jobs: [{ name: "trivy\nimage-scan", color: "2E1A1A", textColor: C.accent2 }],
+    },
+    {
+      label: "⑥ DEPLOY",
+      jobs: [
+        { name: "staging\n:8089",    color: "1A2A1A", textColor: C.green },
+        { name: "production\n:8088", color: "1A2A1A", textColor: C.green },
+      ],
+    },
+  ];
 
-  // Ligne 3: sonar | k6
-  [["sonar\naudit", "2E1A2E", C.gold, 2.5], ["k6\nsmoke-test", "1A2E2E", "#3498DB", 7.2]].forEach(([name, bg, col, x]) => {
-    card(s, x, 3.15, 2.5, 0.65, bg);
-    s.addText(name, { x: x, y: 3.2, w: 2.5, h: 0.55, fontSize: 9, color: col, fontFace: FONT_BODY, align: "center" });
-  });
+  stages.forEach(({ label, jobs }, i) => {
+    const x      = xStart + i * (stageW + gapW);
+    const totalH = jobs.length * jobH + (jobs.length - 1) * jobGap;
+    const yTop   = yCenter - totalH / 2;
 
-  // Ligne 4: build-image (self-hosted)
-  card(s, 5.9, 4.1, 1.6, 0.6, "2E2A1A");
-  s.addText("build-image\n🖥 self-hosted", { x: 5.9, y: 4.12, w: 1.6, h: 0.55, fontSize: 8, color: C.gold, fontFace: FONT_BODY, align: "center" });
+    // Étiquette du stage
+    s.addText(label, {
+      x, y: 1.38, w: stageW, h: 0.30,
+      fontSize: 7.5, bold: true, color: C.grey, fontFace: FONT_BODY,
+      align: "center", charSpacing: 0.3,
+    });
+    s.addShape(pptx.ShapeType.rect, {
+      x: x + stageW / 2 - 0.55, y: 1.68, w: 1.1, h: 0.03,
+      fill: { color: C.accent },
+    });
 
-  // Ligne 5: trivy-image
-  card(s, 5.9, 5.0, 1.6, 0.6, "2E1A1A");
-  s.addText("trivy\nimage-scan", { x: 5.9, y: 5.02, w: 1.6, h: 0.55, fontSize: 8, color: C.accent2, fontFace: FONT_BODY, align: "center" });
+    // Boîtes de jobs
+    jobs.forEach(({ name, color, textColor }, j) => {
+      const y = yTop + j * (jobH + jobGap);
+      card(s, x, y, stageW, jobH, color);
+      s.addText(name, {
+        x, y: y + 0.03, w: stageW, h: jobH - 0.06,
+        fontSize: 9, color: textColor, fontFace: FONT_BODY,
+        align: "center", valign: "middle",
+      });
+    });
 
-  // Ligne 6: staging | production
-  [["deploy\nstaging\n:8089", 3.5], ["deploy\nproduction\n:8088", 8.4]].forEach(([name, x]) => {
-    card(s, x, 5.95, 2.5, 0.75, "1A2A1A");
-    s.addText(name, { x: x, y: 5.97, w: 2.5, h: 0.72, fontSize: 8, color: C.green, fontFace: FONT_BODY, align: "center" });
-  });
-
-  // Flèches verticales de liaison
-  ["↓", "↓", "↓", "↓"].forEach((a, i) => {
-    s.addText(a, { x: 6.55, y: 3.75 + i * 0.9, w: 0.4, h: 0.35, fontSize: 12, color: C.grey, align: "center" });
+    // Flèche vers le stage suivant
+    if (i < stages.length - 1) {
+      s.addText("→", {
+        x: x + stageW + 0.02, y: yCenter - 0.18, w: gapW - 0.04, h: 0.36,
+        fontSize: 16, bold: true, color: C.accent, fontFace: FONT_BODY,
+        align: "center", valign: "middle",
+      });
+    }
   });
 
   // Légende
@@ -331,7 +431,29 @@ PARTIE 3 — Sécurité & Remédiation :
   s.addText("Sécurité / Scan", { x: 3.3, y: 6.83, w: 2, h: 0.22, fontSize: 8, color: C.grey, fontFace: FONT_BODY });
   s.addShape(pptx.ShapeType.rect, { x: 5.8, y: 6.85, w: 0.25, h: 0.18, fill: { color: "2E2A1A" } });
   s.addText("Self-hosted runner", { x: 6.1, y: 6.83, w: 2.5, h: 0.22, fontSize: 8, color: C.grey, fontFace: FONT_BODY });
-  s.addNotes("Voici le pipeline complet avec ses 11 jobs. Les blocs rouges sont les scans de sécurité, les verts les tests fonctionnels. Important à noter : les 3 jobs en bas — build, staging, production — tournent sur mon propre ordinateur grâce au self-hosted runner.");
+  s.addNotes(`Voici le pipeline complet de 11 jobs organisé en 6 étapes de gauche à droite. Chaque étape doit être complétée avant que la suivante puisse démarrer.
+
+① INSTALL : installation des dépendances — prérequis de tous les autres jobs.
+
+② SECURITY · TESTS — 4 jobs en parallèle :
+- sast / npm-audit : analyse statique du code et audit des dépendances JavaScript
+- trivy fs-audit : scan du système de fichiers pour les CVE dans les librairies installées
+- unit-test : exécution complète de la suite PHPUnit
+- e2e-test : tests de bout en bout
+
+③ QUALITY — 2 jobs en parallèle :
+- sonar : analyse SonarCloud de la qualité du code et de la dette technique
+- k6 smoke-test : test de performance léger pour valider les temps de réponse
+
+④ BUILD : construction de l'image Docker finale. S'exécute exclusivement sur le self-hosted runner.
+
+⑤ SCAN : Trivy scanne l'image Docker construite. Si une CVE critique est trouvée, le déploiement est bloqué.
+
+⑥ DEPLOY — 2 environnements en parallèle :
+- staging sur le port 8089 : environnement de recette
+- production sur le port 8088 : environnement de production
+
+Les étapes ④ ⑤ ⑥ s'exécutent uniquement sur le self-hosted runner car elles nécessitent l'accès à l'infrastructure locale.`);
 }
 
 // ─── SLIDE 7 — Compétences & Formation ──────────────────────────────────────
@@ -359,11 +481,22 @@ PARTIE 3 — Sécurité & Remédiation :
 
   // Formation
   card(s, 0.3, 6.0, 12.8, 0.9, "1A1A1A");
-  s.addText("📚  Formation proposée :", { x: 0.5, y: 6.1, w: 3, h: 0.55, fontSize: 12, bold: true, color: C.gold, fontFace: FONT_BODY });
+  s.addText("Formation proposée :", { x: 0.5, y: 6.1, w: 3, h: 0.55, fontSize: 12, bold: true, color: C.gold, fontFace: FONT_BODY });
   s.addText("Certification Kubernetes CKA pour le DevOps — 3 mois · 100% en ligne · Linux Foundation", {
     x: 3.5, y: 6.1, w: 9.4, h: 0.55, fontSize: 12, color: C.white, fontFace: FONT_BODY,
   });
-  s.addNotes("Pour mener ce type de projet, il faut une équipe pluridisciplinaire couvrant 4 profils. La formation CKA pour le DevOps est particulièrement pertinente car Kubernetes est la prochaine étape d'infrastructure. C'est une certification reconnue, 100% en ligne, délivrée par la Linux Foundation.");
+  s.addNotes(`Pour mener ce type de projet, 4 profils complémentaires sont nécessaires.
+
+Lead Developer (×1) : responsable de l'architecture globale, de la mise en place du CI/CD, de la politique de sécurité et de l'approche DevSecOps. C'est le rôle que j'ai endossé sur ce POC. Il est le garant de la cohérence technique.
+
+Dev Backend (×2) : développeurs PHP/Symfony en charge des APIs, des services internes et des tests unitaires. 2 profils car c'est le cœur de l'application — le plus grand volume de code.
+
+Dev Frontend (×1) : développeur JavaScript avec Stimulus et Asset Mapper, en charge de l'interface utilisateur et de l'intégration côté navigateur.
+
+DevOps (×1) : ingénieur infrastructure, responsable de Docker, de la chaîne CI/CD GitHub Actions, et de la future migration vers Kubernetes.
+
+Formation proposée — CKA (Certified Kubernetes Administrator) :
+C'est la certification de référence pour l'administration Kubernetes, délivrée par la Linux Foundation. 3 mois de formation entièrement en ligne. Pourquoi cette formation ? Parce que Kubernetes est l'étape suivante pour passer à une vraie scalabilité horizontale — c'est directement dans la roadmap v2 du projet.`);
 }
 
 // ─── SLIDE 8 — Séparateur Partie 2 ──────────────────────────────────────────
@@ -382,7 +515,13 @@ PARTIE 3 — Sécurité & Remédiation :
     x: 0, y: 4.4, w: "100%", h: 0.5,
     fontSize: 14, color: C.grey, fontFace: FONT_BODY, align: "center", italic: true,
   });
-  s.addNotes("Passons maintenant à la partie réalisation. Comment a-t-on concrètement traduit les besoins métier en code fonctionnel déployé ?");
+  s.addNotes(`Passons maintenant à la partie réalisation. La question centrale de cette partie : comment a-t-on traduit les besoins métier en code fonctionnel, testé et déployé en production ?
+
+On va voir 4 choses :
+- Comment les besoins ont été formalisés avant d'écrire une seule ligne de code — le Backlog et les User Stories
+- L'architecture technique retenue et pourquoi — le pattern BFF
+- Les expérimentations en bac à sable avant intégration
+- Les résultats concrets et les mécanismes qui garantissent la disponibilité`);
 }
 
 // ─── SLIDE 9 — Backlog / User Stories ───────────────────────────────────────
@@ -409,7 +548,15 @@ PARTIE 3 — Sécurité & Remédiation :
     s.addText(title, { x: x + 0.15, y: y + 0.55, w: 6.0, h: 0.5, fontSize: 14, bold: true, color: C.white, fontFace: FONT_BODY });
     s.addText(detail, { x: x + 0.15, y: y + 1.05, w: 6.0, h: 0.7, fontSize: 11, color: C.grey, fontFace: FONT_BODY });
   });
-  s.addNotes("Avant d'écrire une seule ligne de code, on formalise les besoins sous forme de User Stories. Les 4 US couvrent les fonctionnalités clés : profil agrégé, authentification SSO, catalogue produits et notifications asynchrones. Toutes sont implémentées et couvertes par des tests.");
+  s.addNotes(`Avant d'écrire une seule ligne de code, les besoins sont formalisés sous forme de User Stories. C'est un prérequis — ça définit le périmètre fonctionnel et les critères d'acceptance.
+
+US-01 — Profil utilisateur agrégé : le BFF expose un endpoint GET /api/profile/{id} qui agrège les données de plusieurs services internes. Si un service est indisponible, l'API répond avec un statut 206 — Partial Content — plutôt que d'échouer complètement. Le cache de 60 secondes réduit la charge sur les services internes.
+
+US-02 — Authentification Keycloak : mise en place du protocole OAuth2/OIDC avec le flux Authorization Code. Le paramètre 'state' prévient les attaques CSRF. Les informations utilisateur sont transmises via des JWT claims vérifiés côté serveur.
+
+US-03 — Catalogue produits : endpoint public GET /api/products accessible sans authentification. C'est délibéré — la navigation sur le catalogue doit fonctionner sans connexion pour favoriser la conversion.
+
+US-04 — Notifications asynchrones : Symfony Messenger gère les notifications de manière asynchrone. En développement, le transport sync:// est transparent — pas de RabbitMQ à configurer. En production, il bascule sur AMQP sans aucune modification du code applicatif. C'est le concept d'infrastructure transparente.`);
 }
 
 // ─── SLIDE 10 — Architecture technique ──────────────────────────────────────
@@ -419,42 +566,110 @@ PARTIE 3 — Sécurité & Remédiation :
   addBottomBar(s);
   compactTitleSlide(s, "ARCHITECTURE TECHNIQUE", "API Gateway / BFF Pattern");
 
-  // Client
-  card(s, 5.6, 1.3, 2.2, 0.6, "2E1A2E");
-  s.addText("CLIENT (Navigateur)", { x: 5.6, y: 1.38, w: 2.2, h: 0.45, fontSize: 9, bold: true, color: C.white, fontFace: FONT_BODY, align: "center" });
+  // Layout horizontal : 5 couches de gauche à droite
+  const colW   = 2.0;
+  const gapW   = 0.36;
+  const xStart = 0.35;
+  const xs     = [0, 1, 2, 3, 4].map(i => xStart + i * (colW + gapW));
+  const lastW  = 13.33 - xs[4] - 0.30;
+  const widths = [colW, colW, colW, colW, lastW];
 
-  // BFF
-  card(s, 4.5, 2.35, 4.4, 0.75, "1A1A2E");
-  s.addText("API Gateway / BFF\nGET /api/profile/{id} · Cache 60s", { x: 4.5, y: 2.38, w: 4.4, h: 0.65, fontSize: 9, color: C.gold, fontFace: FONT_BODY, align: "center" });
-
-  // Keycloak
-  card(s, 0.3, 2.35, 3.0, 0.75, "2E1A1A");
-  s.addText("Keycloak\nOAuth2/OIDC · SSO", { x: 0.3, y: 2.38, w: 3.0, h: 0.65, fontSize: 9, color: C.accent2, fontFace: FONT_BODY, align: "center" });
-
-  // Services
-  [["UserService\n/internal/users", 4.5, 3.6, "1A2E2E"], ["SubscriptionService\n/internal/subscriptions", 8.0, 3.6, "1A2E2E"]].forEach(([t, x, y, c]) => {
-    card(s, x, y, 3.0, 0.75, c);
-    s.addText(t, { x, y: y + 0.05, w: 3.0, h: 0.65, fontSize: 8, color: C.white, fontFace: FONT_BODY, align: "center" });
+  const colLabels = ["ENTRÉE", "GATEWAY / BFF", "SERVICES", "APPLICATION", "INFRASTRUCTURE"];
+  colLabels.forEach((lbl, i) => {
+    s.addText(lbl, {
+      x: xs[i], y: 1.30, w: widths[i], h: 0.30,
+      fontSize: 8, bold: true, color: C.accent2, fontFace: FONT_BODY,
+      align: "center", charSpacing: 1,
+    });
+    s.addShape(pptx.ShapeType.rect, {
+      x: xs[i] + widths[i] / 2 - 0.55, y: 1.60, w: 1.1, h: 0.04,
+      fill: { color: C.accent },
+    });
   });
 
-  // App Symfony
-  card(s, 1.8, 4.7, 9.8, 0.85, "1A1A1A");
-  s.addText("Application Symfony 6.4 / PHP 8.2\nControllers · Messenger · Security", { x: 1.8, y: 4.72, w: 9.8, h: 0.75, fontSize: 10, color: C.white, fontFace: FONT_BODY, align: "center" });
-
-  // Infra
-  [["PostgreSQL\nDoctrine", 0.3, 5.85, "1A2E1A"], ["RabbitMQ\nAMQP/sync://", 5.0, 5.85, "2E2A1A"], ["Monolog\nLogs JSON", 9.7, 5.85, "1A1A2E"]].forEach(([t, x, y, c]) => {
-    card(s, x, y, 3.5, 0.75, c);
-    s.addText(t, { x, y: y + 0.05, w: 3.5, h: 0.65, fontSize: 9, color: C.grey, fontFace: FONT_BODY, align: "center" });
+  // Col 1 — Entrée : Client + Keycloak
+  card(s, xs[0], 2.20, colW, 0.80, "2E1A2E");
+  s.addText("CLIENT\n(Navigateur)", {
+    x: xs[0], y: 2.20, w: colW, h: 0.80,
+    fontSize: 9, bold: true, color: C.white, fontFace: FONT_BODY,
+    align: "center", valign: "middle",
+  });
+  card(s, xs[0], 3.25, colW, 0.80, "2E1A1A");
+  s.addText("Keycloak\nOAuth2/OIDC · SSO", {
+    x: xs[0], y: 3.25, w: colW, h: 0.80,
+    fontSize: 9, color: C.accent2, fontFace: FONT_BODY,
+    align: "center", valign: "middle",
   });
 
-  // Flèches
+  // Col 2 — BFF (boîte haute couvrant la hauteur des 2 éléments de la col 1)
+  card(s, xs[1], 2.10, colW, 2.10, "1A1A2E");
+  s.addText("API Gateway / BFF\nGET /api/profile/{id}\nCache filesystem 60s\n206 si service KO", {
+    x: xs[1], y: 2.10, w: colW, h: 2.10,
+    fontSize: 9, color: C.gold, fontFace: FONT_BODY,
+    align: "center", valign: "middle",
+  });
+
+  // Col 3 — Services internes
+  card(s, xs[2], 2.20, colW, 0.85, "1A2E2E");
+  s.addText("UserService\n/internal/users", {
+    x: xs[2], y: 2.20, w: colW, h: 0.85,
+    fontSize: 9, color: C.white, fontFace: FONT_BODY,
+    align: "center", valign: "middle",
+  });
+  card(s, xs[2], 3.30, colW, 0.85, "1A2E2E");
+  s.addText("SubscriptionService\n/internal/subscriptions", {
+    x: xs[2], y: 3.30, w: colW, h: 0.85,
+    fontSize: 9, color: C.white, fontFace: FONT_BODY,
+    align: "center", valign: "middle",
+  });
+
+  // Col 4 — Application Symfony (boîte haute alignée sur les services)
+  card(s, xs[3], 2.10, colW, 2.10, "1A1A1A");
+  s.addText("Symfony 6.4 / PHP 8.2\n\nControllers\nMessenger\nSecurity", {
+    x: xs[3], y: 2.10, w: colW, h: 2.10,
+    fontSize: 9, color: C.white, fontFace: FONT_BODY,
+    align: "center", valign: "middle",
+  });
+
+  // Col 5 — Infrastructure (3 boîtes empilées)
   [
-    { x: 6.6, y: 1.9, w: 0.3, h: 0.45 },
-    { x: 6.6, y: 3.1, w: 0.3, h: 0.5 },
-    { x: 6.6, y: 4.2, w: 0.3, h: 0.5 },
-    { x: 6.6, y: 5.5, w: 0.3, h: 0.35 },
-  ].forEach(pos => s.addText("↓", { ...pos, fontSize: 12, color: C.grey, align: "center" }));
-  s.addNotes("L'architecture repose sur le pattern BFF, Backend For Frontend. Le client n'a qu'un seul point d'entrée qui agrège les réponses de plusieurs services. Le cache de 60 secondes évite de surcharger les services internes à chaque requête et améliore les performances.");
+    ["PostgreSQL · Doctrine",   2.10, "1A2E1A"],
+    ["RabbitMQ · AMQP/sync://", 3.10, "2E2A1A"],
+    ["Monolog · Logs JSON",     4.10, "1A1A2E"],
+  ].forEach(([text, y, color]) => {
+    card(s, xs[4], y, lastW, 0.75, color);
+    s.addText(text, {
+      x: xs[4], y, w: lastW, h: 0.75,
+      fontSize: 9, color: C.grey, fontFace: FONT_BODY,
+      align: "center", valign: "middle",
+    });
+  });
+
+  // Flèches horizontales entre colonnes
+  const arrowY = 3.05;
+  [0, 1, 2, 3].forEach(i => {
+    s.addText("→", {
+      x: xs[i] + widths[i] + 0.01, y: arrowY - 0.18, w: gapW - 0.02, h: 0.36,
+      fontSize: 14, bold: true, color: C.accent, fontFace: FONT_BODY,
+      align: "center", valign: "middle",
+    });
+  });
+  s.addNotes(`L'architecture repose sur le pattern BFF — Backend For Frontend. Je vais vous expliquer chaque couche de gauche à droite.
+
+ENTRÉE :
+- CLIENT (Navigateur) : le client n'a qu'un seul point d'entrée — il ne connaît pas la structure interne.
+- Keycloak : gestionnaire d'identité OAuth2/OIDC — tous les accès protégés passent par lui. L'application Symfony ne gère jamais directement les mots de passe.
+
+GATEWAY / BFF : le cerveau de l'architecture. La requête GET /api/profile/{id} interroge UserService et SubscriptionService, consolide les réponses et sert une réponse unifiée. Le cache filesystem de 60 secondes évite les appels répétés. Si un service est KO, il répond 206 Partial Content.
+
+SERVICES : services internes exposés sur /internal/* — non accessibles depuis l'extérieur, uniquement appelés par le BFF.
+
+APPLICATION : Symfony 6.4 avec Controllers pour les routes, Messenger pour les messages asynchrones, Security pour le contrôle d'accès.
+
+INFRASTRUCTURE :
+- PostgreSQL via Doctrine ORM pour la persistance des données
+- RabbitMQ pour les messages AMQP en production (sync:// en dev)
+- Monolog pour les logs JSON structurés et indexables`);
 }
 
 // ─── SLIDE 11 — Expérimentation ─────────────────────────────────────────────
@@ -482,7 +697,17 @@ PARTIE 3 — Sécurité & Remédiation :
     s.addText(result, { x: xAlt + 0.15, y: y + 0.55, w: 3.7, h: 0.3, fontSize: 10, color: i === 4 ? C.orange : C.green, fontFace: FONT_BODY, bold: true });
     s.addText(detail, { x: xAlt + 0.15, y: y + 0.85, w: 3.7, h: 0.65, fontSize: 9, color: C.grey, fontFace: FONT_BODY });
   });
-  s.addNotes("Chaque technologie a été testée dans un bac à sable avant intégration. La difficulté principale : Apache mod_php ne transmet pas automatiquement les variables Docker à PHP. J'ai dû ajouter une directive SetEnv dans la configuration Apache pour contourner ce problème.");
+  s.addNotes(`Chaque technologie clé a été expérimentée dans un bac à sable isolé avant toute intégration. L'objectif : valider les choix techniques et détecter les problèmes tôt, pas en production.
+
+BFF ApiAggregator ✅ Validé : la logique d'agrégation multi-services avec cache filesystem fonctionne. Le comportement dégradé est maîtrisé — retour 206 si un service est KO.
+
+Keycloak OAuth2 ✅ Validé : le SSO fonctionne en local. Le flux Authorization Code avec paramètre state anti-CSRF est opérationnel. Les claims JWT sont correctement vérifiés côté application.
+
+Symfony Messenger ✅ Validé : le point clé ici c'est le transport interchangeable. sync:// en dev, AMQP en prod — zéro modification du code applicatif entre les deux. C'est ce que j'appelle l'infrastructure transparente.
+
+GitHub Actions ✅ Validé : le self-hosted runner sous Windows exécute les 11 jobs. Le déploiement automatique vers staging et production fonctionne à chaque push sur la branche main.
+
+Docker / Apache ⚠️ Problème résolu : c'est la difficulté technique principale rencontrée. mod_php sous Apache ne transmet pas automatiquement les variables d'environnement Docker à PHP. La solution : ajouter une directive SetEnv explicite dans la configuration Apache pour chaque variable nécessaire.`);
 }
 
 // ─── SLIDE 12 — Résultats des tests ─────────────────────────────────────────
@@ -513,7 +738,17 @@ PARTIE 3 — Sécurité & Remédiation :
   s.addText("✅  Pipeline complet : install → sast → sonar → trivy → unit-test → e2e → k6 → build-image → trivy-image → staging → production", {
     x: 0.5, y: 6.68, w: 12.4, h: 0.35, fontSize: 10, color: C.green, fontFace: FONT_BODY,
   });
-  s.addNotes("Les chiffres valident la qualité de la réalisation. 59 tests, zéro échec, 186 assertions. La couverture de classes dépasse 78%. Les tests k6 confirment des temps de réponse inférieurs à 200ms au 95e percentile. Trivy ne remonte aucune CVE critique sur l'image Docker.");
+  s.addNotes(`Ces 4 chiffres constituent la preuve concrète de la qualité de la livraison. Ce ne sont pas des estimations — ils sont mesurés automatiquement dans le pipeline CI/CD.
+
+59 tests PHPUnit : suite complète couvrant toutes les User Stories avec 186 assertions individuelles. Zéro échec. Chaque fonctionnalité est vérifiée automatiquement à chaque build.
+
+78,95% couverture de classes : la couverture de classes est l'indicateur le plus pertinent car elle garantit que chaque composant est exercé par un test. 59,11% de lignes est l'indicateur affiché dans la slide ISO 25010 — les deux sont mesurés.
+
+35/35 checks k6 : les 35 scénarios de charge définis dans le script k6 passent tous avec succès. Le 95e percentile des temps de réponse est inférieur à 200ms et le taux d'erreur est de 0%.
+
+0 CVE Critical : Trivy scanne l'image Docker finale construite par le pipeline et ne remonte aucune vulnérabilité critique. C'est le résultat d'un choix d'image de base maintenue et des scans intégrés dès le build.
+
+La barre verte en bas rappelle que tout ça est produit par le pipeline complet — de l'installation jusqu'au déploiement en production.`);
 }
 
 // ─── SLIDE 12b — Disponibilité & Montée en charge ───────────────────────────
@@ -525,25 +760,35 @@ PARTIE 3 — Sécurité & Remédiation :
   mainTitle(s, "Orchestrer la production\npour garantir la disponibilité");
 
   const items = [
-    { icon: "🔄", title: "Restart automatique",      detail: "--restart=unless-stopped\nRedémarrage auto si crash conteneur",   color: "1A2E1A" },
-    { icon: "🏥", title: "Health check /healthy",    detail: "12 tentatives × 5s dans le pipeline\nVérification DB + endpoint Symfony",  color: "1A1A2E" },
-    { icon: "🗄️",  title: "Persistance des données", detail: "Volume Docker lpmde_pg_data\nDonnées conservées entre déploiements",  color: "2E2A1A" },
-    { icon: "⚡", title: "Performance validée k6",   detail: "35/35 checks · p95 < 200ms\n0% d'erreurs sous charge simulée",      color: "1A2E2E" },
+    { title: "Restart automatique",      detail: "--restart=unless-stopped\nRedémarrage auto si crash conteneur",   color: "1A2E1A" },
+    { title: "Health check /healthy",    detail: "12 tentatives × 5s dans le pipeline\nVérification DB + endpoint Symfony",  color: "1A1A2E" },
+    { title: "Persistance des données",  detail: "Volume Docker lpmde_pg_data\nDonnées conservées entre déploiements",  color: "2E2A1A" },
+    { title: "Performance validée k6",   detail: "35/35 checks · p95 < 200ms\n0% d'erreurs sous charge simulée",      color: "1A2E2E" },
   ];
 
-  items.forEach(({ icon, title, detail, color }, i) => {
+  items.forEach(({ title, detail, color }, i) => {
     const x = 0.3 + (i % 2) * 6.6;
     const y = 3.0 + Math.floor(i / 2) * 2.0;
     card(s, x, y, 6.3, 1.75, color);
-    s.addText(icon + "  " + title, { x: x + 0.15, y: y + 0.12, w: 6.0, h: 0.55, fontSize: 14, bold: true, color: C.white, fontFace: FONT_BODY });
+    s.addText(title, { x: x + 0.15, y: y + 0.12, w: 6.0, h: 0.55, fontSize: 14, bold: true, color: C.white, fontFace: FONT_BODY });
     s.addText(detail, { x: x + 0.15, y: y + 0.72, w: 6.0, h: 0.9, fontSize: 12, color: C.grey, fontFace: FONT_BODY });
   });
 
   card(s, 0.3, 6.82, 12.8, 0.35, "1A1A1A");
-  s.addText("🚀  Roadmap scalabilité : Kubernetes (CKA) → Load Balancer → Multi-instances → SLA 99,9%", {
+  s.addText("Roadmap scalabilité : Kubernetes (CKA) → Load Balancer → Multi-instances → SLA 99,9%", {
     x: 0.5, y: 6.84, w: 12.4, h: 0.28, fontSize: 10, color: C.gold, fontFace: FONT_BODY,
   });
-  s.addNotes("La disponibilité est garantie par plusieurs mécanismes complémentaires : le restart automatique Docker en cas de crash, le health check automatisé avec 12 tentatives dans le pipeline, la persistance via volume nommé, et les tests k6 qui valident les performances sous charge. La prochaine étape vers la vraie montée en charge horizontale : Kubernetes.");
+  s.addNotes(`La disponibilité en production repose sur 4 mécanismes complémentaires — chacun couvre un scénario de défaillance différent.
+
+🔄 Restart automatique — --restart=unless-stopped : si le conteneur crashe pour n'importe quelle raison (erreur applicative, manque mémoire), Docker le redémarre automatiquement. L'application revient en ligne sans intervention humaine. La seule exception : si on l'arrête volontairement (unless-stopped).
+
+🏥 Health check /healthy : le pipeline effectue 12 tentatives espacées de 5 secondes pour vérifier que le conteneur est bien opérationnel avant de déclarer le déploiement réussi. Le endpoint /healthy vérifie deux choses : la connexion à la base de données ET la disponibilité de l'application Symfony.
+
+🗄️ Persistance des données — volume lpmde_pg_data : les données PostgreSQL sont stockées dans un volume Docker nommé qui survit aux redéploiements. Mettre à jour l'application n'efface pas les données — c'est fondamental en production.
+
+⚡ Performance validée k6 : les tests de charge confirment que l'application tient la charge simulée. 35 checks réussis avec un p95 sous 200ms. C'est une validation quantifiée, pas juste une impression.
+
+Roadmap scalabilité : ces mécanismes garantissent la disponibilité sur un seul serveur. La vraie haute disponibilité horizontale — multi-instances, load balancer, SLA 99,9% — nécessite Kubernetes, qui est dans la roadmap v2.`);
 }
 
 // ─── SLIDE 13 — Séparateur Partie 3 ─────────────────────────────────────────
@@ -562,7 +807,12 @@ PARTIE 3 — Sécurité & Remédiation :
     x: 0, y: 4.4, w: "100%", h: 0.5,
     fontSize: 14, color: C.grey, fontFace: FONT_BODY, align: "center", italic: true,
   });
-  s.addNotes("Passons maintenant à l'analyse de sécurité. Un bon logiciel c'est aussi un logiciel sécurisé. Dans cette v1, j'ai identifié plusieurs points d'amélioration et proposé un plan d'action concret.");
+  s.addNotes(`Passons maintenant à l'analyse de sécurité. Un bon logiciel, c'est aussi un logiciel sécurisé. Le pipeline vérifie qu'il n'y a pas de CVE dans les dépendances, mais ça ne suffit pas — il faut aussi auditer les choix de conception et de configuration.
+
+Dans cette partie, on va voir 3 choses :
+- L'audit OWASP Top 10 de la v1 avec les 7 vulnérabilités identifiées
+- Le plan de remédiation concret en 3 sprints pour les traiter progressivement
+- Les 3 mesures préventives prévues pour la v2 pour passer d'une posture réactive à proactive`);
 }
 
 // ─── SLIDE 14 — Vulnérabilités OWASP ────────────────────────────────────────
@@ -575,7 +825,7 @@ PARTIE 3 — Sécurité & Remédiation :
 
   const vulns = [
     { id: "V-01", label: "access_control: [] en dev",          crit: "CRITIQUE", color: C.accent2 },
-    { id: "V-02", label: "SQLite sans chiffrement en prod",     crit: "HAUTE",    color: C.orange },
+    { id: "V-02", label: "Connexions PostgreSQL sans SSL/TLS",   crit: "HAUTE",    color: C.orange },
     { id: "V-03", label: "APP_SECRET potentiellement exposé",   crit: "CRITIQUE", color: C.accent2 },
     { id: "V-04", label: "Pas de rate limiting sur /api/*",     crit: "HAUTE",    color: C.orange },
     { id: "V-05", label: "Headers CSP / HSTS absents",          crit: "MOYENNE",  color: C.gold },
@@ -591,7 +841,21 @@ PARTIE 3 — Sécurité & Remédiation :
     s.addShape(pptx.ShapeType.rect, { x: 10.0, y: y + 0.07, w: 2.8, h: 0.35, fill: { color: "0D0D0D" }, line: { color, width: 1.5 } });
     s.addText(crit, { x: 10.0, y: y + 0.07, w: 2.8, h: 0.35, fontSize: 9, bold: true, color, fontFace: FONT_BODY, align: "center", valign: "middle" });
   });
-  s.addNotes("J'ai audité la v1 selon le référentiel OWASP Top 10. Résultat : 7 vulnérabilités identifiées dont 2 critiques. Le contrôle d'accès ouvert en développement et l'APP_SECRET potentiellement exposé sont les risques les plus sérieux à traiter en priorité.");
+  s.addNotes(`J'ai audité la v1 selon le référentiel OWASP Top 10. Résultat : 7 vulnérabilités identifiées, classées par criticité.
+
+V-01 — CRITIQUE : access_control en [] en développement. La configuration Symfony désactive le contrôle d'accès en environnement de dev. C'est tolérable localement, mais dangereux si cet environnement est exposé ou si la config est copiée en production par erreur.
+
+V-02 — HAUTE : connexions PostgreSQL sans SSL/TLS. Les communications entre l'application et la base de données ne sont pas chiffrées. Sur un réseau interne cela peut sembler acceptable, mais c'est une non-conformité aux bonnes pratiques de sécurité.
+
+V-03 — CRITIQUE : APP_SECRET potentiellement exposé. Si le fichier .env est accessible publiquement ou versionné dans git, la clé secrète Symfony est compromise — ce qui permet de forger des tokens et des sessions.
+
+V-04 — HAUTE : absence de rate limiting sur /api/*. Aucune protection contre les attaques par force brute, la surcharge intentionnelle ou l'abus de l'API.
+
+V-05 — MOYENNE : headers CSP et HSTS absents. Sans Content Security Policy ni HTTP Strict Transport Security, le navigateur est plus exposé aux attaques XSS et aux connexions non sécurisées.
+
+V-06 — MOYENNE : logs sans anonymisation RGPD. Les logs Monolog peuvent contenir des adresses IP, emails ou autres données personnelles — non conforme au RGPD.
+
+V-07 — BASSE : image Docker php:8.2-apache volumineuse. Une image large augmente inutilement la surface d'attaque potentielle. Migration vers alpine ou distroless recommandée.`);
 }
 
 // ─── SLIDE 15 — Plan de remédiation ─────────────────────────────────────────
@@ -605,7 +869,7 @@ PARTIE 3 — Sécurité & Remédiation :
   const sprints = [
     {
       sprint: "Sprint 1\nImmédiat",
-      actions: "• Activer access_control en prod\n• Secrets via GitHub Secrets / Vault\n• Migrer vers PostgreSQL",
+      actions: "• Activer access_control en prod\n• Secrets via GitHub Secrets / Vault\n• Activer SSL/TLS sur PostgreSQL",
       impact: "Critique → Résolu",
       color: "2E1A1A",
       impactColor: C.green,
@@ -635,7 +899,25 @@ PARTIE 3 — Sécurité & Remédiation :
     s.addShape(pptx.ShapeType.rect, { x: x + 0.3, y: 6.45, w: 3.4, h: 0.38, fill: { color: "0A0A0A" }, line: { color: impactColor, width: 1.5 } });
     s.addText(impact, { x: x + 0.3, y: 6.45, w: 3.4, h: 0.38, fontSize: 11, bold: true, color: impactColor, fontFace: FONT_BODY, align: "center", valign: "middle" });
   });
-  s.addNotes("Le plan de remédiation est organisé en 3 sprints progressifs. En sprint 1, on traite l'essentiel : fermer le contrôle d'accès, sécuriser les secrets via GitHub Secrets, migrer vers PostgreSQL. Les sprints 2 et 3 adressent les vulnérabilités de niveau haute et basse.");
+  s.addNotes(`Le plan est organisé en 3 sprints progressifs selon la criticité — du plus urgent au préventif.
+
+Sprint 1 — Immédiat (vulnérabilités critiques) :
+• Activer access_control en production : supprimer ou conditionner le tableau vide [] dans la configuration Symfony Security. Action technique simple, impact immédiat.
+• Secrets via GitHub Secrets / Vault : l'APP_SECRET et tous les credentials ne doivent jamais être en clair dans le fichier .env du dépôt. GitHub Secrets est la solution rapide, Vault est la solution robuste pour la v2.
+• Activer SSL/TLS sur PostgreSQL : chiffrer les connexions entre l'application et la base de données pour protéger les données en transit.
+Impact attendu : les 2 vulnérabilités critiques sont résolues.
+
+Sprint 2 — 1 mois (vulnérabilités hautes) :
+• Rate limiting Symfony : utiliser le composant RateLimiter natif de Symfony sur tous les endpoints /api/* pour bloquer les abus.
+• Headers CSP / HSTS : configurer Apache ou Symfony pour ajouter systématiquement les headers de sécurité obligatoires à chaque réponse.
+• Anonymisation des logs RGPD : masquer les données personnelles dans Monolog via un processeur dédié.
+Impact attendu : les vulnérabilités de niveau HAUTE sont résolues.
+
+Sprint 3 — 3 mois (réduction de surface d'attaque) :
+• Image Docker alpine ou distroless : réduire l'image à l'essentiel pour minimiser les CVE potentielles.
+• WAF en frontal : pare-feu applicatif pour filtrer les requêtes malveillantes avant qu'elles atteignent l'application.
+• Audit RGPD complet : revue exhaustive de tous les traitements de données personnelles.
+Impact attendu : la surface d'attaque globale est significativement réduite.`);
 }
 
 // ─── SLIDE 16 — Mesures préventives v2 ──────────────────────────────────────
@@ -651,35 +933,40 @@ PARTIE 3 — Sécurité & Remédiation :
       num: "01",
       title: "Secrets Management",
       desc: "HashiCorp Vault ou GitHub Secrets\navec rotation automatique des clés\net audit trail des accès",
-      icon: "🔐",
       color: "2E1A1A",
     },
     {
       num: "02",
       title: "DAST Pipeline",
       desc: "OWASP ZAP intégré au job staging\nTest dynamique automatisé\nRapport SARIF → GitHub Security",
-      icon: "🕵️",
       color: "1A1A2E",
     },
     {
       num: "03",
       title: "SCA — Dépendances",
       desc: "Dependabot activé sur composer.json\nAlertes CVE automatiques\nMise à jour PR automatique",
-      icon: "📦",
       color: "1A2E1A",
     },
   ];
 
-  measures.forEach(({ num, title, desc, icon, color }, i) => {
+  measures.forEach(({ num, title, desc, color }, i) => {
     const x = 0.4 + i * 4.3;
     card(s, x, 3.0, 4.0, 4.1, color);
     s.addText(num, { x: x + 0.2, y: 3.1, w: 1.0, h: 0.8, fontSize: 36, bold: true, color: C.accent2, fontFace: FONT_TITLE });
-    s.addText(icon, { x: x + 2.8, y: 3.1, w: 1.0, h: 0.8, fontSize: 28, align: "right" });
     s.addShape(pptx.ShapeType.rect, { x: x + 0.3, y: 3.9, w: 3.4, h: 0.05, fill: { color: C.accent } });
     s.addText(title, { x: x + 0.2, y: 4.0, w: 3.6, h: 0.55, fontSize: 14, bold: true, color: C.white, fontFace: FONT_BODY });
     s.addText(desc, { x: x + 0.2, y: 4.6, w: 3.6, h: 2.0, fontSize: 12, color: C.grey, fontFace: FONT_BODY });
   });
-  s.addNotes("Pour la v2, la sécurité devient proactive. HashiCorp Vault pour la gestion des secrets avec rotation automatique, OWASP ZAP intégré dans le pipeline pour les tests dynamiques, et Dependabot pour la surveillance continue des dépendances. On ne réagit plus, on anticipe.");
+  s.addNotes(`Pour la v2, la posture de sécurité devient proactive — on anticipe les risques au lieu de les subir.
+
+01 — Secrets Management avec HashiCorp Vault :
+Le problème actuel : les secrets sont dans des variables d'environnement. Vault centralise et chiffre tous les secrets dans un coffre-fort dédié. La rotation automatique des clés garantit qu'un secret potentiellement compromis est invalidé sans intervention humaine. L'audit trail enregistre chaque accès pour une traçabilité complète — utile en cas d'incident.
+
+02 — DAST Pipeline avec OWASP ZAP :
+Le SAST déjà en place analyse le code statique — il ne voit pas les vulnérabilités qui n'apparaissent qu'à l'exécution. OWASP ZAP s'intègre dans le job de staging et teste l'application en fonctionnement réel : injections, failles d'authentification, expositions de données. Les résultats au format SARIF sont publiés automatiquement dans GitHub Security pour suivi et traçabilité.
+
+03 — SCA avec Dependabot :
+Les dépendances déclarées dans composer.json vieillissent et accumulent des CVE. Dependabot surveille en continu toutes les dépendances et ouvre automatiquement des Pull Requests de mise à jour dès qu'une faille est connue. L'équipe n'a plus à surveiller manuellement les bulletins de sécurité — c'est automatisé.`);
 }
 
 // ─── SLIDE 17 — Bilan ───────────────────────────────────────────────────────
@@ -692,20 +979,20 @@ PARTIE 3 — Sécurité & Remédiation :
 
   const cols = [
     {
-      title: "✅ Livré",
+      title: "Livré",
       items: ["Pipeline CI/CD 11 jobs", "BFF + Keycloak + Messenger", "Déploiement auto self-hosted", "4 livrables documentaires"],
       color: "1A2E1A",
       titleColor: C.green,
     },
     {
-      title: "📊 Mesuré",
+      title: "Mesuré",
       items: ["59 tests · 79% coverage", "k6 p95 < 200ms · 0 erreur", "0 CVE Critical (Trivy)", "SonarCloud actif"],
       color: "1A1A2E",
       titleColor: C.gold,
     },
     {
-      title: "🚀 Perspective v2",
-      items: ["PostgreSQL + RabbitMQ", "WAF + DAST pipeline", "Kubernetes en production", "Espace communautaire"],
+      title: "Perspective v2",
+      items: ["RabbitMQ AMQP en production", "WAF + DAST pipeline", "Kubernetes en production", "Espace communautaire"],
       color: "2E1A1A",
       titleColor: C.accent2,
     },
@@ -720,32 +1007,42 @@ PARTIE 3 — Sécurité & Remédiation :
       s.addText("▸  " + item, { x: x + 0.2, y: 3.85 + j * 0.72, w: 3.6, h: 0.6, fontSize: 11, color: C.white, fontFace: FONT_BODY });
     });
   });
-  s.addNotes("Pour conclure : on a livré une application fonctionnelle avec un pipeline de 11 jobs, une architecture BFF éprouvée, et une analyse de sécurité complète. Les métriques sont au vert et les perspectives v2 sont clairement définies. C'est une base solide pour la suite.");
+  s.addNotes(`Pour conclure, voici le bilan de cette mission en 3 dimensions.
+
+✅ Livré :
+- Pipeline CI/CD 11 jobs : automatisation complète du build, test, scan de sécurité et déploiement. Chaque push sur main déclenche l'ensemble de la chaîne.
+- BFF + Keycloak + Messenger : les 3 composants techniques structurants sont opérationnels et couverts par des tests.
+- Déploiement auto self-hosted : staging et production se déploient automatiquement sans intervention manuelle.
+- 4 livrables documentaires : les supports de cette présentation constituent la documentation de la mission.
+
+📊 Mesuré :
+- 59 tests avec 79% de couverture : une base de tests solide pour maintenir la qualité dans le temps.
+- k6 valide p95 < 200ms avec 0% d'erreur : les performances sont prouvées sous charge, pas juste estimées.
+- 0 CVE critique sur l'image de production : sécurité mesurée, pas supposée.
+- SonarCloud actif pour la surveillance continue de la maintenabilité.
+
+🚀 Perspectives v2 :
+- RabbitMQ AMQP en production : le code est déjà prêt, il reste à activer le transport AMQP en production.
+- WAF + DAST pipeline : les mesures préventives détaillées dans la diapositive précédente.
+- Kubernetes : orchestration multi-instances pour la vraie scalabilité horizontale et le SLA 99,9%.
+- Espace communautaire : la fonctionnalité métier prioritaire identifiée pour enrichir la plateforme en v2.`);
 }
 
-// ─── SLIDE 18 — Questions ────────────────────────────────────────────────────
+// ─── SLIDE 18 — Merci ────────────────────────────────────────────────────────
 {
   const s = slide({ bg: C.bg });
-  s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 0.5, h: "100%", fill: { color: C.accent } });
   s.addText("Merci", {
-    x: 0.8, y: 1.2, w: 11, h: 2.0,
-    fontSize: 72, bold: true, color: C.white, fontFace: FONT_TITLE,
+    x: 0, y: 1.6, w: "100%", h: 3.0,
+    fontSize: 96, bold: true, color: C.white, fontFace: FONT_TITLE, align: "center",
   });
-  s.addShape(pptx.ShapeType.rect, { x: 0.8, y: 3.4, w: 5, h: 0.06, fill: { color: C.accent } });
-  s.addText("Questions ?", {
-    x: 0.8, y: 3.6, w: 8, h: 0.9,
-    fontSize: 30, color: C.grey, fontFace: FONT_TITLE, italic: true,
-  });
+  s.addShape(pptx.ShapeType.rect, { x: 1.5, y: 4.9, w: 10.3, h: 0.07, fill: { color: C.accent } });
+  s.addNotes(`Voilà, c'est la fin de cette présentation.
 
-  const links = [
-    "🔗  github.com/Brok3nWings/lpmde",
-    "🖥  Staging : http://localhost:8089",
-    "🚀  Production : http://localhost:8088",
-  ];
-  links.forEach((l, i) => {
-    s.addText(l, { x: 0.8, y: 4.8 + i * 0.55, w: 10, h: 0.45, fontSize: 13, color: C.gold, fontFace: FONT_BODY });
-  });
-  s.addNotes("Voilà, c'est la fin de cette présentation. Je suis disponible pour toutes vos questions. N'hésitez pas à demander une démonstration live — les environnements staging et production sont actifs sur ma machine en ce moment.");
+Pour récapituler en une phrase : on est partis d'un SI fragmenté, et on livre une plateforme avec un pipeline de 11 jobs, une architecture BFF sécurisée, 59 tests automatisés et une analyse de sécurité complète avec plan d'action.
+
+Je suis disponible pour toutes vos questions — que ce soit sur les choix techniques, l'organisation du pipeline, la sécurité ou les perspectives v2.
+
+N'hésitez pas à demander une démonstration live — les environnements staging sur le port 8089 et production sur le port 8088 sont actifs sur ma machine en ce moment.`);
 }
 
 // ─── Génération ───────────────────────────────────────────────────────────────
