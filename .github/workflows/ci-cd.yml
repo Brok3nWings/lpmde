@@ -283,11 +283,10 @@ jobs:
       - name: Ensure PostgreSQL container is running
         run: |
           $ErrorActionPreference = 'SilentlyContinue'
-          $running = docker inspect --format "{{.State.Running}}" lpmde_db_prod 2>$null
-          $ErrorActionPreference = 'Stop'
+          $running = docker inspect --format "{{.State.Running}}" lpmde_db_prod 2>&1
           if ($running -ne "true") {
             Write-Host "Demarrage du conteneur PostgreSQL..."
-            docker rm lpmde_db_prod 2>$null
+            docker rm lpmde_db_prod 2>&1 | Out-Null
             docker run -d `
               --restart=unless-stopped `
               --network lpmde-net `
@@ -297,12 +296,11 @@ jobs:
               -e POSTGRES_PASSWORD=app_password `
               -v lpmde_pg_data:/var/lib/postgresql/data `
               postgres:16-alpine
+            if ($LASTEXITCODE -ne 0) { Write-Error "docker run failed"; exit 1 }
             Start-Sleep -Seconds 10
           } else {
             Write-Host "PostgreSQL deja en cours d'execution"
-            $ErrorActionPreference = 'SilentlyContinue'
-            $nets = docker inspect --format "{{json .NetworkSettings.Networks}}" lpmde_db_prod 2>$null
-            $ErrorActionPreference = 'Stop'
+            $nets = docker inspect --format "{{json .NetworkSettings.Networks}}" lpmde_db_prod 2>&1
             if ($nets -notmatch "lpmde-net") { docker network connect lpmde-net lpmde_db_prod }
           }
 
@@ -386,11 +384,10 @@ jobs:
       - name: Ensure PostgreSQL container is running
         run: |
           $ErrorActionPreference = 'SilentlyContinue'
-          $running = docker inspect --format "{{.State.Running}}" lpmde_db_prod 2>$null
-          $ErrorActionPreference = 'Stop'
+          $running = docker inspect --format "{{.State.Running}}" lpmde_db_prod 2>&1
           if ($running -ne "true") {
             Write-Host "Demarrage du conteneur PostgreSQL..."
-            docker rm lpmde_db_prod 2>$null
+            docker rm lpmde_db_prod 2>&1 | Out-Null
             docker run -d `
               --restart=unless-stopped `
               --network lpmde-net `
@@ -400,12 +397,11 @@ jobs:
               -e POSTGRES_PASSWORD=app_password `
               -v lpmde_pg_data:/var/lib/postgresql/data `
               postgres:16-alpine
+            if ($LASTEXITCODE -ne 0) { Write-Error "docker run failed"; exit 1 }
             Start-Sleep -Seconds 10
           } else {
             Write-Host "PostgreSQL deja en cours d'execution"
-            $ErrorActionPreference = 'SilentlyContinue'
-            $nets = docker inspect --format "{{json .NetworkSettings.Networks}}" lpmde_db_prod 2>$null
-            $ErrorActionPreference = 'Stop'
+            $nets = docker inspect --format "{{json .NetworkSettings.Networks}}" lpmde_db_prod 2>&1
             if ($nets -notmatch "lpmde-net") { docker network connect lpmde-net lpmde_db_prod }
           }
 
