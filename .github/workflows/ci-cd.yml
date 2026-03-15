@@ -282,10 +282,12 @@ jobs:
 
       - name: Ensure PostgreSQL container is running
         run: |
-          $running = docker inspect --format "{{.State.Running}}" lpmde_db_prod 2>&1
+          $ErrorActionPreference = 'SilentlyContinue'
+          $running = docker inspect --format "{{.State.Running}}" lpmde_db_prod 2>$null
+          $ErrorActionPreference = 'Stop'
           if ($running -ne "true") {
             Write-Host "Demarrage du conteneur PostgreSQL..."
-            docker rm lpmde_db_prod 2>&1 | Out-Null
+            docker rm lpmde_db_prod 2>$null
             docker run -d `
               --restart=unless-stopped `
               --network lpmde-net `
@@ -298,7 +300,9 @@ jobs:
             Start-Sleep -Seconds 10
           } else {
             Write-Host "PostgreSQL deja en cours d'execution"
-            $nets = docker inspect --format "{{json .NetworkSettings.Networks}}" lpmde_db_prod 2>&1
+            $ErrorActionPreference = 'SilentlyContinue'
+            $nets = docker inspect --format "{{json .NetworkSettings.Networks}}" lpmde_db_prod 2>$null
+            $ErrorActionPreference = 'Stop'
             if ($nets -notmatch "lpmde-net") { docker network connect lpmde-net lpmde_db_prod }
           }
 
@@ -381,10 +385,12 @@ jobs:
 
       - name: Ensure PostgreSQL container is running
         run: |
-          $running = docker inspect --format "{{.State.Running}}" lpmde_db_prod 2>&1
+          $ErrorActionPreference = 'SilentlyContinue'
+          $running = docker inspect --format "{{.State.Running}}" lpmde_db_prod 2>$null
+          $ErrorActionPreference = 'Stop'
           if ($running -ne "true") {
             Write-Host "Demarrage du conteneur PostgreSQL..."
-            docker rm lpmde_db_prod 2>&1 | Out-Null
+            docker rm lpmde_db_prod 2>$null
             docker run -d `
               --restart=unless-stopped `
               --network lpmde-net `
@@ -397,7 +403,9 @@ jobs:
             Start-Sleep -Seconds 10
           } else {
             Write-Host "PostgreSQL deja en cours d'execution"
-            $nets = docker inspect --format "{{json .NetworkSettings.Networks}}" lpmde_db_prod 2>&1
+            $ErrorActionPreference = 'SilentlyContinue'
+            $nets = docker inspect --format "{{json .NetworkSettings.Networks}}" lpmde_db_prod 2>$null
+            $ErrorActionPreference = 'Stop'
             if ($nets -notmatch "lpmde-net") { docker network connect lpmde-net lpmde_db_prod }
           }
 
