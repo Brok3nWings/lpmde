@@ -217,6 +217,30 @@ jobs:
           echo "USER_SERVICE_URL=http://localhost:8001" >> .env
           echo "SUBSCRIPTION_SERVICE_URL=http://localhost:8001" >> .env
           echo "MESSENGER_TRANSPORT_DSN=sync://" >> .env
+          echo "KEYCLOAK_URL=http://localhost:8080" >> .env
+          echo "KEYCLOAK_REALM=master" >> .env
+          echo "KEYCLOAK_CLIENT_ID=symfony-app" >> .env
+          echo "KEYCLOAK_CLIENT_SECRET=Uc1QgKt5VIjRhqhhe3TpGWCZmUc7oVZk" >> .env
+          echo "KEYCLOAK_REDIRECT_URI=http://localhost:8000/login/keycloak/callback" >> .env
+
+      - name: Start Keycloak
+        run: |
+          docker run -d \
+            --name keycloak \
+            -p 8080:8080 \
+            -e KEYCLOAK_ADMIN=admin \
+            -e KEYCLOAK_ADMIN_PASSWORD=admin \
+            quay.io/keycloak/keycloak:26 start-dev
+          echo "Waiting for Keycloak to be ready..."
+          for i in $(seq 1 24); do
+            if curl -sf http://localhost:8080/health/ready > /dev/null 2>&1; then
+              echo "Keycloak ready after ${i}x5s"
+              break
+            fi
+            echo "Attempt $i/24..."
+            sleep 5
+          done
+          curl -sf http://localhost:8080/health/ready > /dev/null && echo "Keycloak OK" || echo "Keycloak not ready (continuing)"
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
