@@ -32,6 +32,8 @@ Ce document présente les outils DevOps utilisés dans le projet ainsi qu'une de
 > - de **conserver les secrets** d'environnement (`APP_SECRET`) sur une infrastructure maîtrisée plutôt que de les exposer à une machine cloud tierce.
 >
 > Le runner self-hosted est configuré via `runs-on: self-hosted` dans les jobs `build-image`, `trivy-image-scan`, `deploy-staging` et `deploy-production`.
+> Commande : cd actions-runner
+> ./run.cmd
 
 ### Conteneurisation
 
