@@ -106,14 +106,7 @@ sonar-audit:
     entrypoint: [""]
   needs: [unit-test]
   script:
-    - >
-      sonar-scanner
-      -Dsonar.projectKey=${CI_PROJECT_NAME}
-      -Dsonar.organization=${SONAR_ORGANIZATION}
-      -Dsonar.sources=src
-      -Dsonar.host.url=https://sonarcloud.io
-      -Dsonar.php.coverage.reportPaths=var/log/cobertura.xml
-      -Dsonar.token=${SONAR_TOKEN}
+    - sonar-scanner -Dsonar.host.url=https://sonarcloud.io -Dsonar.token=${SONAR_TOKEN}
   allow_failure: true
 
 # -----------------------------------------
