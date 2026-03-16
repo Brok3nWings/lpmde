@@ -340,6 +340,30 @@ jobs:
             if ($nets -notmatch "lpmde-net") { docker network connect lpmde-net lpmde_db_prod }
           }
 
+      - name: Ensure Keycloak container is running
+        run: |
+          $ErrorActionPreference = 'SilentlyContinue'
+          $running = docker inspect --format "{{.State.Running}}" lpmde_keycloak 2>&1
+          if ($running -ne "true") {
+            Write-Host "Demarrage du conteneur Keycloak..."
+            docker rm lpmde_keycloak 2>&1 | Out-Null
+            docker run -d `
+              --restart=unless-stopped `
+              --network lpmde-net `
+              --name lpmde_keycloak `
+              -p 8080:8080 `
+              -e KEYCLOAK_ADMIN=admin `
+              -e KEYCLOAK_ADMIN_PASSWORD=admin `
+              quay.io/keycloak/keycloak:latest start-dev
+            if ($LASTEXITCODE -ne 0) { Write-Error "docker run keycloak failed"; exit 1 }
+            Write-Host "Attente demarrage Keycloak (30s)..."
+            Start-Sleep -Seconds 30
+          } else {
+            Write-Host "Keycloak deja en cours d'execution"
+            $nets = docker inspect --format "{{json .NetworkSettings.Networks}}" lpmde_keycloak 2>&1
+            if ($nets -notmatch "lpmde-net") { docker network connect lpmde-net lpmde_keycloak }
+          }
+
       - name: Stop and remove existing staging container
         run: |
           docker stop lpmde_staging
@@ -355,6 +379,11 @@ jobs:
             -e APP_ENV=prod `
             -e APP_SECRET=${{ secrets.APP_SECRET }} `
             -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
+            -e KEYCLOAK_URL="http://lpmde_keycloak:8080" `
+            -e KEYCLOAK_REALM=master `
+            -e KEYCLOAK_CLIENT_ID=symfony-app `
+            -e KEYCLOAK_CLIENT_SECRET=Uc1QgKt5VIjRhqhhe3TpGWCZmUc7oVZk `
+            -e KEYCLOAK_REDIRECT_URI="http://localhost:8089/login/keycloak/callback" `
             --name lpmde_staging `
             lpmde:latest
 
@@ -441,6 +470,30 @@ jobs:
             if ($nets -notmatch "lpmde-net") { docker network connect lpmde-net lpmde_db_prod }
           }
 
+      - name: Ensure Keycloak container is running
+        run: |
+          $ErrorActionPreference = 'SilentlyContinue'
+          $running = docker inspect --format "{{.State.Running}}" lpmde_keycloak 2>&1
+          if ($running -ne "true") {
+            Write-Host "Demarrage du conteneur Keycloak..."
+            docker rm lpmde_keycloak 2>&1 | Out-Null
+            docker run -d `
+              --restart=unless-stopped `
+              --network lpmde-net `
+              --name lpmde_keycloak `
+              -p 8080:8080 `
+              -e KEYCLOAK_ADMIN=admin `
+              -e KEYCLOAK_ADMIN_PASSWORD=admin `
+              quay.io/keycloak/keycloak:latest start-dev
+            if ($LASTEXITCODE -ne 0) { Write-Error "docker run keycloak failed"; exit 1 }
+            Write-Host "Attente demarrage Keycloak (30s)..."
+            Start-Sleep -Seconds 30
+          } else {
+            Write-Host "Keycloak deja en cours d'execution"
+            $nets = docker inspect --format "{{json .NetworkSettings.Networks}}" lpmde_keycloak 2>&1
+            if ($nets -notmatch "lpmde-net") { docker network connect lpmde-net lpmde_keycloak }
+          }
+
       - name: Stop and remove existing container
         run: |
           docker stop lpmde_prod
@@ -456,6 +509,11 @@ jobs:
             -e APP_ENV=prod `
             -e APP_SECRET=${{ secrets.APP_SECRET }} `
             -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
+            -e KEYCLOAK_URL="http://lpmde_keycloak:8080" `
+            -e KEYCLOAK_REALM=master `
+            -e KEYCLOAK_CLIENT_ID=symfony-app `
+            -e KEYCLOAK_CLIENT_SECRET=Uc1QgKt5VIjRhqhhe3TpGWCZmUc7oVZk `
+            -e KEYCLOAK_REDIRECT_URI="http://localhost:8088/login/keycloak/callback" `
             --name lpmde_prod `
             lpmde:latest
 
