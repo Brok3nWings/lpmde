@@ -191,6 +191,20 @@ jobs:
   k6-smoke-test:
     runs-on: ubuntu-latest
     needs: [unit-test, e2e-test]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: app_db
+          POSTGRES_USER: app_user
+          POSTGRES_PASSWORD: app_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -199,7 +213,7 @@ jobs:
         run: |
           echo "APP_ENV=dev" > .env
           echo "APP_SECRET=test_secret_for_ci_only" >> .env
-          echo "DATABASE_URL=sqlite:///%kernel.project_dir%/var/test.db" >> .env
+          echo "DATABASE_URL=postgresql://app_user:app_password@localhost:5432/app_db?serverVersion=16&charset=utf8" >> .env
           echo "USER_SERVICE_URL=http://localhost:8001" >> .env
           echo "SUBSCRIPTION_SERVICE_URL=http://localhost:8001" >> .env
           echo "MESSENGER_TRANSPORT_DSN=sync://" >> .env
@@ -208,7 +222,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: pdo, pdo_sqlite
+          extensions: pdo, pdo_pgsql
 
       - name: Download vendor artifact
         uses: actions/download-artifact@v4
@@ -219,10 +233,8 @@ jobs:
       - name: Install k6
         uses: grafana/setup-k6-action@v1
 
-      - name: Setup SQLite database
+      - name: Setup database
         run: |
-          mkdir -p var
-          php bin/console doctrine:database:create --if-not-exists --no-interaction
           php bin/console doctrine:migrations:migrate --no-interaction
           php bin/console cache:clear --no-warmup
 
