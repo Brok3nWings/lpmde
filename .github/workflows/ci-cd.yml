@@ -364,6 +364,34 @@ jobs:
             if ($nets -notmatch "lpmde-net") { docker network connect lpmde-net lpmde_keycloak }
           }
 
+      - name: Configure Keycloak client
+        run: |
+          for ($i = 1; $i -le 12; $i++) {
+            try {
+              Invoke-WebRequest -Uri "http://localhost:8080/health/ready" -UseBasicParsing -ErrorAction Stop | Out-Null
+              Write-Host "Keycloak pret"
+              break
+            } catch {
+              Write-Host "Attente Keycloak $i/12..."
+              Start-Sleep -Seconds 5
+            }
+          }
+          $tokenResp = Invoke-RestMethod -Uri "http://localhost:8080/realms/master/protocol/openid-connect/token" `
+            -Method Post -ContentType "application/x-www-form-urlencoded" `
+            -Body "grant_type=password&client_id=admin-cli&username=admin&password=admin"
+          $token = $tokenResp.access_token
+          $clients = Invoke-RestMethod -Uri "http://localhost:8080/admin/realms/master/clients?clientId=symfony-app" `
+            -Headers @{Authorization="Bearer $token"}
+          if ($clients.Count -eq 0) {
+            $body = '{"clientId":"symfony-app","secret":"Uc1QgKt5VIjRhqhhe3TpGWCZmUc7oVZk","enabled":true,"publicClient":false,"redirectUris":["*"],"webOrigins":["*"],"standardFlowEnabled":true,"directAccessGrantsEnabled":true}'
+            Invoke-RestMethod -Uri "http://localhost:8080/admin/realms/master/clients" `
+              -Method Post -Headers @{Authorization="Bearer $token";"Content-Type"="application/json"} -Body $body
+            Write-Host "Client symfony-app cree"
+          } else {
+            Write-Host "Client symfony-app deja existant"
+          }
+        continue-on-error: true
+
       - name: Stop and remove existing staging container
         run: |
           docker stop lpmde_staging
@@ -493,6 +521,34 @@ jobs:
             $nets = docker inspect --format "{{json .NetworkSettings.Networks}}" lpmde_keycloak 2>&1
             if ($nets -notmatch "lpmde-net") { docker network connect lpmde-net lpmde_keycloak }
           }
+
+      - name: Configure Keycloak client
+        run: |
+          for ($i = 1; $i -le 12; $i++) {
+            try {
+              Invoke-WebRequest -Uri "http://localhost:8080/health/ready" -UseBasicParsing -ErrorAction Stop | Out-Null
+              Write-Host "Keycloak pret"
+              break
+            } catch {
+              Write-Host "Attente Keycloak $i/12..."
+              Start-Sleep -Seconds 5
+            }
+          }
+          $tokenResp = Invoke-RestMethod -Uri "http://localhost:8080/realms/master/protocol/openid-connect/token" `
+            -Method Post -ContentType "application/x-www-form-urlencoded" `
+            -Body "grant_type=password&client_id=admin-cli&username=admin&password=admin"
+          $token = $tokenResp.access_token
+          $clients = Invoke-RestMethod -Uri "http://localhost:8080/admin/realms/master/clients?clientId=symfony-app" `
+            -Headers @{Authorization="Bearer $token"}
+          if ($clients.Count -eq 0) {
+            $body = '{"clientId":"symfony-app","secret":"Uc1QgKt5VIjRhqhhe3TpGWCZmUc7oVZk","enabled":true,"publicClient":false,"redirectUris":["*"],"webOrigins":["*"],"standardFlowEnabled":true,"directAccessGrantsEnabled":true}'
+            Invoke-RestMethod -Uri "http://localhost:8080/admin/realms/master/clients" `
+              -Method Post -Headers @{Authorization="Bearer $token";"Content-Type"="application/json"} -Body $body
+            Write-Host "Client symfony-app cree"
+          } else {
+            Write-Host "Client symfony-app deja existant"
+          }
+        continue-on-error: true
 
       - name: Stop and remove existing container
         run: |
