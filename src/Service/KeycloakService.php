@@ -12,11 +12,15 @@ class KeycloakService
     private string $clientSecret;
     private string $redirectUri;
 
+    private string $keycloakInternalUrl;
+
     public function __construct(
         private HttpClientInterface $httpClient
     ) {
         // Configuration Keycloak - À adapter selon votre installation
         $this->keycloakUrl = $_ENV['KEYCLOAK_URL'] ?? 'http://localhost:8080';
+        // URL interne Docker pour les appels serveur-à-serveur (token exchange, userinfo)
+        $this->keycloakInternalUrl = $_ENV['KEYCLOAK_INTERNAL_URL'] ?? $this->keycloakUrl;
         $this->realm = $_ENV['KEYCLOAK_REALM'] ?? 'master';
         $this->clientId = $_ENV['KEYCLOAK_CLIENT_ID'] ?? 'symfony-app';
         $this->clientSecret = $_ENV['KEYCLOAK_CLIENT_SECRET'] ?? '';
@@ -71,7 +75,7 @@ class KeycloakService
     {
         return sprintf(
             '%s/realms/%s/protocol/openid-connect/token',
-            $this->keycloakUrl,
+            $this->keycloakInternalUrl,
             $this->realm
         );
     }
@@ -80,7 +84,7 @@ class KeycloakService
     {
         return sprintf(
             '%s/realms/%s/protocol/openid-connect/userinfo',
-            $this->keycloakUrl,
+            $this->keycloakInternalUrl,
             $this->realm
         );
     }

@@ -407,7 +407,8 @@ jobs:
             -e APP_ENV=prod `
             -e APP_SECRET=${{ secrets.APP_SECRET }} `
             -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
-            -e KEYCLOAK_URL="http://lpmde_keycloak:8080" `
+            -e KEYCLOAK_URL="http://localhost:8080" `
+            -e KEYCLOAK_INTERNAL_URL="http://lpmde_keycloak:8080" `
             -e KEYCLOAK_REALM=master `
             -e KEYCLOAK_CLIENT_ID=symfony-app `
             -e KEYCLOAK_CLIENT_SECRET=Uc1QgKt5VIjRhqhhe3TpGWCZmUc7oVZk `
@@ -565,7 +566,8 @@ jobs:
             -e APP_ENV=prod `
             -e APP_SECRET=${{ secrets.APP_SECRET }} `
             -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
-            -e KEYCLOAK_URL="http://lpmde_keycloak:8080" `
+            -e KEYCLOAK_URL="http://localhost:8080" `
+            -e KEYCLOAK_INTERNAL_URL="http://lpmde_keycloak:8080" `
             -e KEYCLOAK_REALM=master `
             -e KEYCLOAK_CLIENT_ID=symfony-app `
             -e KEYCLOAK_CLIENT_SECRET=Uc1QgKt5VIjRhqhhe3TpGWCZmUc7oVZk `
