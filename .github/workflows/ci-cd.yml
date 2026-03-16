@@ -240,11 +240,24 @@ jobs:
 
       - name: Start PHP servers
         run: |
-          php -S localhost:8000 -t public > /dev/null 2>&1 &
-          php -S localhost:8001 -t public > /dev/null 2>&1 &
+          mkdir -p var/log
+          php -S localhost:8000 -t public > /tmp/server-8000.log 2>&1 &
+          php -S localhost:8001 -t public > /tmp/server-8001.log 2>&1 &
           sleep 5
-          curl -sf http://localhost:8000/healthy > /dev/null && echo "Server 8000 OK" || echo "Server 8000 not ready (continuing)"
-          curl -sf http://localhost:8001/healthy > /dev/null && echo "Server 8001 OK" || echo "Server 8001 not ready (continuing)"
+          if curl -sf http://localhost:8000/healthy > /dev/null 2>&1; then
+            echo "Server 8000 OK"
+          else
+            echo "=== Server 8000 log ==="
+            cat /tmp/server-8000.log || true
+            echo "Server 8000 not responding"
+          fi
+          if curl -sf http://localhost:8001/healthy > /dev/null 2>&1; then
+            echo "Server 8001 OK"
+          else
+            echo "=== Server 8001 log ==="
+            cat /tmp/server-8001.log || true
+            echo "Server 8001 not responding"
+          fi
 
       - name: Run k6 smoke test
         run: k6 run load-tests/smoke-test.js --out json=var/log/k6-results.json
