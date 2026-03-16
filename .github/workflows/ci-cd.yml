@@ -238,30 +238,15 @@ jobs:
           php bin/console doctrine:migrations:migrate --no-interaction
           php bin/console cache:clear --no-warmup
 
-      - name: Start PHP servers
+      - name: Start PHP servers and run k6 smoke test
         run: |
           mkdir -p var/log
           php -S localhost:8000 -t public > /tmp/server-8000.log 2>&1 &
           php -S localhost:8001 -t public > /tmp/server-8001.log 2>&1 &
           sleep 5
-          if curl -sf http://localhost:8000/healthy > /dev/null 2>&1; then
-            echo "Server 8000 OK"
-          else
-            echo "=== Server 8000 log ==="
-            cat /tmp/server-8000.log || true
-            echo "Server 8000 not responding"
-          fi
-          if curl -sf http://localhost:8001/healthy > /dev/null 2>&1; then
-            echo "Server 8001 OK"
-          else
-            echo "=== Server 8001 log ==="
-            cat /tmp/server-8001.log || true
-            echo "Server 8001 not responding"
-          fi
-
-      - name: Run k6 smoke test
-        run: k6 run load-tests/smoke-test.js --out json=var/log/k6-results.json
-        continue-on-error: true
+          curl -sf http://localhost:8000/healthy > /dev/null && echo "Server 8000 OK" || (cat /tmp/server-8000.log; echo "Server 8000 not responding")
+          curl -sf http://localhost:8001/healthy > /dev/null && echo "Server 8001 OK" || (cat /tmp/server-8001.log; echo "Server 8001 not responding")
+          k6 run load-tests/smoke-test.js --out json=var/log/k6-results.json || true
 
       - name: Upload k6 results
         uses: actions/upload-artifact@v4
