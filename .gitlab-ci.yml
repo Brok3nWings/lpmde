@@ -7,172 +7,316 @@ stages:
 
 variables:
   DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: "/certs"
 
-# Stage Install
+.php-setup: &php-setup
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq git unzip libpq-dev libsqlite3-dev
+    - docker-php-ext-install pdo pdo_pgsql pdo_sqlite
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# -----------------------------------------
+# Stage: Install
+# -----------------------------------------
 install:
   stage: install
-  image: composer:latest
+  image: php:8.2-cli
+  <<: *php-setup
   script:
-    - composer install --prefer-dist --no-ansi --no-interaction --no-progress --no-scripts --optimize-autoloader
+    - |
+      echo "APP_ENV=test" > .env
+      echo "APP_SECRET=test_secret_for_ci_only" >> .env
+      echo "DATABASE_URL=postgresql://test:test@localhost:5432/test?serverVersion=16" >> .env
+    - composer install --prefer-dist --no-ansi --no-interaction --no-progress --optimize-autoloader
   cache:
-    key: ${CI_COMMIT_REF_SLUG}
+    key: composer-$CI_COMMIT_REF_SLUG
     paths:
       - vendor/
   artifacts:
     paths:
       - vendor/
-    expire_in: 1 hour
-  only:
-    - branches
+    expire_in: 1 day
 
-# Stage Test
+# -----------------------------------------
+# Stage: Test
+# -----------------------------------------
 sast-npm-audit:
   stage: test
   image: node:18
+  needs: [install]
   script:
     - npm audit --audit-level=moderate || true
   allow_failure: true
-  only:
-    - branches
-
-sonar-audit:
-  stage: test
-  image: sonarsource/sonar-scanner-cli:latest
-  dependencies:
-    - unit-test
-  script:
-    - |
-      if [ -z "${SONAR_HOST_URL}" ]; then
-        echo "SONAR_HOST_URL not configured, skipping SonarQube analysis"
-        exit 0
-      fi
-    - sonar-scanner
-      -Dsonar.projectKey=${CI_PROJECT_NAME}
-      -Dsonar.sources=src
-      -Dsonar.host.url=${SONAR_HOST_URL}
-      -Dsonar.login=${SONAR_TOKEN}
-      -Dsonar.php.coverage.reportPaths=var/log/cobertura.xml
-  allow_failure: true
-  only:
-    - branches
 
 trivy-fs-audit:
   stage: test
-  image: 
+  image:
     name: aquasec/trivy:latest
     entrypoint: [""]
+  needs: [install]
   script:
-    - trivy fs --severity HIGH,CRITICAL --exit-code 0 --scanners vuln .
+    - trivy fs --severity HIGH,CRITICAL --exit-code 0 .
   allow_failure: true
-  only:
-    - branches
 
 unit-test:
   stage: test
   image: php:8.2-cli
-  dependencies:
-    - install
+  needs: [install]
   before_script:
-    - apt-get update && apt-get install -y git zip unzip
-    - docker-php-ext-install pdo pdo_mysql
+    - apt-get update -qq && apt-get install -y -qq git unzip libpq-dev
+    - docker-php-ext-install pdo pdo_pgsql
     - pecl install pcov && docker-php-ext-enable pcov
-    - mkdir -p var/log
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
   script:
-    - XDEBUG_MODE=coverage php bin/phpunit --coverage-cobertura=var/log/cobertura.xml --log-junit=var/log/junit.xml
-  coverage: '/^\s*Lines:\s*\d+.\d+\%/'
+    - |
+      echo "APP_ENV=test" > .env
+      echo "APP_SECRET=test_secret_for_ci_only" >> .env
+      echo "DATABASE_URL=postgresql://test:test@localhost:5432/test?serverVersion=16" >> .env
+    - mkdir -p var/log
+    - php bin/phpunit --coverage-cobertura=var/log/cobertura.xml --log-junit=var/log/junit.xml --coverage-text | tee var/log/coverage-summary.txt
+    - grep -E "Classes|Methods|Lines" var/log/coverage-summary.txt || true
   artifacts:
+    when: always
     reports:
       junit: var/log/junit.xml
       coverage_report:
         coverage_format: cobertura
         path: var/log/cobertura.xml
-  only:
-    - branches
+    paths:
+      - var/log/junit.xml
+      - var/log/cobertura.xml
+    expire_in: 1 day
 
-e2e-test-job:
+e2e-test:
   stage: test
   image: php:8.2-cli
-  dependencies:
-    - install
-  before_script:
-    - apt-get update && apt-get install -y git zip unzip
-    - docker-php-ext-install pdo pdo_mysql
+  needs: [install]
+  <<: *php-setup
   script:
-  - echo "Running E2E tests"
-  - php bin/phpunit -c phpunit.xml.dist --testsuite=e2e --no-coverage
+    - |
+      echo "APP_ENV=test" > .env
+      echo "APP_SECRET=test_secret_for_ci_only" >> .env
+      echo "DATABASE_URL=postgresql://test:test@localhost:5432/test?serverVersion=16" >> .env
+    - echo "Running E2E tests"
+    - php bin/phpunit --testsuite=e2e --no-coverage
 
-  allow_failure: false
-  only:
-    - branches
+sonar-audit:
+  stage: test
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  needs: [unit-test]
+  script:
+    - >
+      sonar-scanner
+      -Dsonar.projectKey=${CI_PROJECT_NAME}
+      -Dsonar.organization=${SONAR_ORGANIZATION}
+      -Dsonar.sources=src
+      -Dsonar.host.url=https://sonarcloud.io
+      -Dsonar.php.coverage.reportPaths=var/log/cobertura.xml
+      -Dsonar.token=${SONAR_TOKEN}
+  allow_failure: true
 
-# Stage Release
-build-image-job:
+# -----------------------------------------
+# Stage: Release
+# -----------------------------------------
+k6-smoke-test:
   stage: release
-  image: docker:latest
-  services:
-    - docker:dind
+  image: php:8.2-cli
+  needs: [unit-test, e2e-test]
   before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - apt-get update -qq && apt-get install -y -qq git unzip libsqlite3-dev curl gnupg
+    - docker-php-ext-install pdo pdo_sqlite
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    - gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+    - echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | tee /etc/apt/sources.list.d/k6.list
+    - apt-get update -qq && apt-get install -y k6
   script:
-    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA .
-    - docker build -t $CI_REGISTRY_IMAGE:latest .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
-    - docker push $CI_REGISTRY_IMAGE:latest
-  only:
-    - main
-    - master
-    - develop
+    - |
+      echo "APP_ENV=dev" > .env
+      echo "APP_SECRET=test_secret_for_ci_only" >> .env
+      echo "DATABASE_URL=sqlite:///%kernel.project_dir%/var/test.db" >> .env
+      echo "USER_SERVICE_URL=http://localhost:8001" >> .env
+      echo "SUBSCRIPTION_SERVICE_URL=http://localhost:8001" >> .env
+      echo "MESSENGER_TRANSPORT_DSN=sync://" >> .env
+    - php -S localhost:8000 -t public &
+    - php -S localhost:8001 -t public &
+    - sleep 3
+    - curl -sf http://localhost:8000/ > /dev/null && echo "Server 8000 OK"
+    - curl -sf http://localhost:8001/ > /dev/null && echo "Server 8001 OK"
+    - mkdir -p var/log
+    - k6 run load-tests/smoke-test.js --out json=var/log/k6-results.json
+  artifacts:
+    when: always
+    paths:
+      - var/log/k6-results.json
+    expire_in: 1 day
+  allow_failure: true
 
-# Stage Staging
-deploy-staging-job:
-  stage: staging
-  image: alpine:latest
-  before_script:
-    - apk add --no-cache openssh-client
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan $STAGING_SERVER >> ~/.ssh/known_hosts
+build-image:
+  stage: release
+  tags:
+    - self-hosted
+  needs: [unit-test, e2e-test, k6-smoke-test]
   script:
-    - echo "Deploying to staging environment"
-    - ssh $STAGING_USER@$STAGING_SERVER "
-        cd $STAGING_PATH &&
-        docker pull $CI_REGISTRY_IMAGE:latest &&
-        docker-compose down &&
-        docker-compose up -d
-      "
+    - docker build -t lpmde:latest .
+
+trivy-image-scan:
+  stage: release
+  tags:
+    - self-hosted
+  needs: [build-image]
+  script:
+    - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image --severity HIGH,CRITICAL --exit-code 0 lpmde:latest
+  allow_failure: true
+
+# -----------------------------------------
+# Stage: Staging  (runner Windows self-hosted - PowerShell)
+# -----------------------------------------
+deploy-staging:
+  stage: staging
+  tags:
+    - self-hosted
+  needs: [trivy-image-scan]
   environment:
     name: staging
-    url: https://staging.example.com
-  only:
-    - develop
-  when: manual
-
-# Stage Production
-deploy-production-job:
-  stage: production
-  image: alpine:latest
-  before_script:
-    - apk add --no-cache openssh-client
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan $PRODUCTION_SERVER >> ~/.ssh/known_hosts
+    url: http://localhost:8089
   script:
-    - echo "Deploying to production environment"
-    - ssh $PRODUCTION_USER@$PRODUCTION_SERVER "
-        cd $PRODUCTION_PATH &&
-        docker pull $CI_REGISTRY_IMAGE:latest &&
-        docker-compose down &&
-        docker-compose up -d
-      "
+    - docker network inspect lpmde-net 2>&1 | Out-Null; if ($LASTEXITCODE -ne 0) { docker network create lpmde-net }; Write-Host "Network ready"
+    - |
+      $ErrorActionPreference = 'SilentlyContinue'
+      $running = docker inspect --format "{{.State.Running}}" lpmde_db_prod 2>&1
+      if ($running -ne "true") {
+        Write-Host "Demarrage du conteneur PostgreSQL..."
+        docker rm lpmde_db_prod 2>&1 | Out-Null
+        docker run -d `
+          --restart=unless-stopped `
+          --network lpmde-net `
+          --name lpmde_db_prod `
+          -e POSTGRES_DB=app_db `
+          -e POSTGRES_USER=app_user `
+          -e POSTGRES_PASSWORD=app_password `
+          -v lpmde_pg_data:/var/lib/postgresql/data `
+          postgres:16-alpine
+        if ($LASTEXITCODE -ne 0) { Write-Error "docker run failed"; exit 1 }
+        Start-Sleep -Seconds 10
+      } else {
+        Write-Host "PostgreSQL deja en cours d'execution"
+        $nets = docker inspect --format "{{json .NetworkSettings.Networks}}" lpmde_db_prod 2>&1
+        if ($nets -notmatch "lpmde-net") { docker network connect lpmde-net lpmde_db_prod }
+      }
+    - docker stop lpmde_staging; docker rm lpmde_staging
+    - |
+      docker run -d `
+        --restart=unless-stopped `
+        --network lpmde-net `
+        -p 8089:80 `
+        -e APP_ENV=prod `
+        -e APP_SECRET=$env:APP_SECRET `
+        -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
+        --name lpmde_staging `
+        lpmde:latest
+    - |
+      Start-Sleep -Seconds 5
+      docker exec `
+        -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
+        lpmde_staging `
+        bash -c "cd /var/www/html && php bin/console doctrine:migrations:migrate --no-interaction"
+    - docker exec lpmde_staging php bin/console app:db:seed --no-interaction; Write-Host "Seed termine"
+    - |
+      docker exec lpmde_staging chown -R www-data:www-data /var/www/html/var
+      docker exec -u www-data `
+        -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
+        lpmde_staging `
+        php bin/console cache:warmup --env=prod
+    - |
+      $maxAttempts = 12; $attempt = 0
+      do {
+        $attempt++
+        Start-Sleep -Seconds 5
+        try {
+          $response = Invoke-WebRequest -Uri http://localhost:8089/healthy -UseBasicParsing -ErrorAction Stop
+          Write-Host "Staging OK - HTTP $($response.StatusCode)"; exit 0
+        } catch {
+          $statusCode = if ($_.Exception.Response) { $_.Exception.Response.StatusCode.value__ } else { "connexion refusee" }
+          Write-Host "Tentative $attempt/$maxAttempts - $statusCode - $($_.Exception.Message)"
+        }
+      } while ($attempt -lt $maxAttempts)
+      docker logs --tail 50 lpmde_staging
+      docker inspect --format "Statut: {{.State.Status}} | Erreur: {{.State.Error}}" lpmde_staging
+      Write-Host "Health check echoue apres $maxAttempts tentatives"; exit 1
+
+# -----------------------------------------
+# Stage: Production  (runner Windows self-hosted - PowerShell)
+# -----------------------------------------
+deploy-production:
+  stage: production
+  tags:
+    - self-hosted
+  needs: [deploy-staging]
+  when: manual
   environment:
     name: production
-    url: https://production.example.com
-  only:
-    - main
-    - master
-  when: manual
+    url: http://localhost:8088
+  script:
+    - docker network inspect lpmde-net 2>&1 | Out-Null; if ($LASTEXITCODE -ne 0) { docker network create lpmde-net }; Write-Host "Network ready"
+    - |
+      $ErrorActionPreference = 'SilentlyContinue'
+      $running = docker inspect --format "{{.State.Running}}" lpmde_db_prod 2>&1
+      if ($running -ne "true") {
+        Write-Host "Demarrage du conteneur PostgreSQL..."
+        docker rm lpmde_db_prod 2>&1 | Out-Null
+        docker run -d `
+          --restart=unless-stopped `
+          --network lpmde-net `
+          --name lpmde_db_prod `
+          -e POSTGRES_DB=app_db `
+          -e POSTGRES_USER=app_user `
+          -e POSTGRES_PASSWORD=app_password `
+          -v lpmde_pg_data:/var/lib/postgresql/data `
+          postgres:16-alpine
+        if ($LASTEXITCODE -ne 0) { Write-Error "docker run failed"; exit 1 }
+        Start-Sleep -Seconds 10
+      } else {
+        Write-Host "PostgreSQL deja en cours d'execution"
+        $nets = docker inspect --format "{{json .NetworkSettings.Networks}}" lpmde_db_prod 2>&1
+        if ($nets -notmatch "lpmde-net") { docker network connect lpmde-net lpmde_db_prod }
+      }
+    - docker stop lpmde_prod; docker rm lpmde_prod
+    - |
+      docker run -d `
+        --restart=unless-stopped `
+        --network lpmde-net `
+        -p 8088:80 `
+        -e APP_ENV=prod `
+        -e APP_SECRET=$env:APP_SECRET `
+        -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
+        --name lpmde_prod `
+        lpmde:latest
+    - |
+      Start-Sleep -Seconds 5
+      docker exec `
+        -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
+        lpmde_prod `
+        bash -c "cd /var/www/html && php bin/console doctrine:migrations:migrate --no-interaction"
+    - |
+      docker exec lpmde_prod chown -R www-data:www-data /var/www/html/var
+      docker exec -u www-data `
+        -e DATABASE_URL="postgresql://app_user:app_password@lpmde_db_prod:5432/app_db?serverVersion=16&charset=utf8" `
+        lpmde_prod `
+        php bin/console cache:warmup --env=prod
+    - |
+      $maxAttempts = 12; $attempt = 0
+      do {
+        $attempt++
+        Start-Sleep -Seconds 5
+        try {
+          $response = Invoke-WebRequest -Uri http://localhost:8088/healthy -UseBasicParsing -ErrorAction Stop
+          Write-Host "Production OK - HTTP $($response.StatusCode)"; exit 0
+        } catch {
+          $statusCode = if ($_.Exception.Response) { $_.Exception.Response.StatusCode.value__ } else { "connexion refusee" }
+          Write-Host "Tentative $attempt/$maxAttempts - $statusCode - $($_.Exception.Message)"
+        }
+      } while ($attempt -lt $maxAttempts)
+      docker logs --tail 50 lpmde_prod
+      docker inspect --format "Statut: {{.State.Status}} | Erreur: {{.State.Error}}" lpmde_prod
+      Write-Host "Health check echoue apres $maxAttempts tentatives"; exit 1
