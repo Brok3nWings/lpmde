@@ -65,9 +65,14 @@ class SecurityController extends AbstractController
             $user = $userRepository->findOneByKeycloakId($userInfo['sub']);
 
             if (!$user) {
-                $user = new User();
-                $user->setKeycloakId($userInfo['sub']);
+                $user = $userRepository->findOneByEmail($userInfo['email'] ?? '');
             }
+
+            if (!$user) {
+                $user = new User();
+            }
+
+            $user->setKeycloakId($userInfo['sub']);
 
             // Mettre à jour les informations de l'utilisateur
             $user->setEmail($userInfo['email'] ?? 'no-email@example.com');
