@@ -7,6 +7,12 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 
+export function handleSummary(data) {
+    return {
+        'var/log/k6-summary.json': JSON.stringify(data, null, 2),
+    };
+}
+
 export const options = {
     vus:      1,
     duration: '30s',

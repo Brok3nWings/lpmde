@@ -274,12 +274,68 @@ jobs:
           curl -sf http://localhost:8001/healthy > /dev/null && echo "Server 8001 OK" || (cat /tmp/server-8001.log; echo "Server 8001 not responding")
           k6 run load-tests/smoke-test.js --out json=var/log/k6-results.json || true
 
+      - name: Publish k6 metrics to Job Summary
+        if: always()
+        run: |
+          if [ -f var/log/k6-summary.json ]; then
+            python3 << 'EOF'
+          import json, os
+          with open('var/log/k6-summary.json') as f:
+              data = json.load(f)
+          m = data.get('metrics', {})
+
+          def v(metric, key, default='N/A'):
+              try:
+                  return m[metric]['values'][key]
+              except (KeyError, TypeError):
+                  return default
+
+          avg       = v('http_req_duration', 'avg')
+          p95       = v('http_req_duration', 'p(95)')
+          failed    = v('http_req_failed',   'rate')
+          reqs      = v('http_reqs',         'count')
+          chk_rate  = v('checks',            'rate')
+          chk_pass  = v('checks',            'passes')
+          chk_fail  = v('checks',            'fails')
+
+          def ms(val):
+              return f"{val:.2f} ms" if isinstance(val, (int, float)) else str(val)
+          def pct(val):
+              return f"{val*100:.1f}%" if isinstance(val, (int, float)) else str(val)
+          def num(val):
+              return str(int(val)) if isinstance(val, float) else str(val)
+
+          lines = [
+              "## k6 Smoke Test — Métriques\n",
+              "| Métrique | Valeur |",
+              "|---|---|",
+              f"| Requêtes totales | {num(reqs)} |",
+              f"| Durée moyenne | {ms(avg)} |",
+              f"| Durée p(95) | {ms(p95)} |",
+              f"| Taux d'échec HTTP | {pct(failed)} |",
+              f"| Checks réussis | {pct(chk_rate)} ({num(chk_pass)} ✓ / {num(chk_fail)} ✗) |",
+          ]
+
+          summary_file = os.environ.get('GITHUB_STEP_SUMMARY')
+          if summary_file:
+              with open(summary_file, 'a') as f:
+                  f.write('\n'.join(lines) + '\n')
+          else:
+              print('\n'.join(lines))
+          EOF
+          else
+            echo "## k6 Smoke Test" >> $GITHUB_STEP_SUMMARY
+            echo "Fichier k6-summary.json introuvable — métriques non disponibles" >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Upload k6 results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: k6-results
-          path: var/log/k6-results.json
+          path: |
+            var/log/k6-results.json
+            var/log/k6-summary.json
         continue-on-error: true
 
   # Stage Release
